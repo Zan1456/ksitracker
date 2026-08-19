@@ -64,8 +64,8 @@ export default async function EditLevelPage({ params }: { params: Promise<{ leve
                   <ReorderButtons
                     disabledUp={i === 0}
                     disabledDown={i === levelWorkouts.length - 1}
-                    onUp={() => reorderWorkoutAction(w.id, "up")}
-                    onDown={() => reorderWorkoutAction(w.id, "down")}
+                    onUp={reorderWorkoutAction.bind(null, w.id, "up")}
+                    onDown={reorderWorkoutAction.bind(null, w.id, "down")}
                   />
                   <Link href={`/admin/plans/workouts/${w.id}`} className="min-w-0 flex-1">
                     <div className="truncate text-[12.5px] font-medium">{w.name}</div>
@@ -76,7 +76,7 @@ export default async function EditLevelPage({ params }: { params: Promise<{ leve
                   <ConfirmDeleteButton
                     confirmText={`Törlöd a(z) "${w.name}" edzést?`}
                     toastText={`${w.name} törölve`}
-                    action={() => deleteWorkoutAction(level.id, w.id)}
+                    action={deleteWorkoutAction.bind(null, level.id, w.id)}
                   />
                 </StaggerItem>
               );
@@ -90,7 +90,7 @@ export default async function EditLevelPage({ params }: { params: Promise<{ leve
         <ConfirmDeleteButton
           confirmText={`Biztosan törlöd a(z) "${level.name}" szintet? Minden edzése, feladata és a hozzá tartozó felhasználói haladás is törlődik.`}
           toastText={`${level.name} szint törölve`}
-          action={() => deleteLevelAction(level.id)}
+          action={deleteLevelAction.bind(null, level.id)}
           label="Szint törlése"
           className="mt-2 justify-center border-t border-border pt-4 text-[12.5px] font-medium"
         />

@@ -6,8 +6,15 @@ import { subscribeToasts, getToasts, dismissToast } from "@/lib/toast-store";
 import { IconCheck, IconX } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
+const EMPTY: never[] = [];
+function getEmptySnapshot() {
+  return EMPTY;
+}
+
 export function Toaster() {
-  const toasts = useSyncExternalStore(subscribeToasts, getToasts, () => []);
+  // Stable references (module-level function + constant) so React doesn't
+  // warn about an uncached snapshot on every render.
+  const toasts = useSyncExternalStore(subscribeToasts, getToasts, getEmptySnapshot);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-[520px] flex-col items-center gap-2 px-5 pb-[calc(env(safe-area-inset-bottom)+84px)]">

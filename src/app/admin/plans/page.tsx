@@ -42,8 +42,8 @@ export default async function AdminPlansPage() {
                 <ReorderButtons
                   disabledUp={li === 0}
                   disabledDown={li === allLevels.length - 1}
-                  onUp={() => reorderLevelAction(level.id, "up")}
-                  onDown={() => reorderLevelAction(level.id, "down")}
+                  onUp={reorderLevelAction.bind(null, level.id, "up")}
+                  onDown={reorderLevelAction.bind(null, level.id, "down")}
                 />
                 <Link href={`/admin/plans/levels/${level.id}`} className="flex-1">
                   <div className="text-[13.5px] font-medium">
@@ -74,8 +74,8 @@ export default async function AdminPlansPage() {
                         <ReorderButtons
                           disabledUp={wi === 0}
                           disabledDown={wi === arr.length - 1}
-                          onUp={() => reorderWorkoutAction(w.id, "up")}
-                          onDown={() => reorderWorkoutAction(w.id, "down")}
+                          onUp={reorderWorkoutAction.bind(null, w.id, "up")}
+                          onDown={reorderWorkoutAction.bind(null, w.id, "down")}
                         />
                         <Link href={`/admin/plans/workouts/${w.id}`} className="min-w-0 flex-1">
                           <div className="truncate text-[12.5px] font-medium">{w.name}</div>
@@ -86,7 +86,7 @@ export default async function AdminPlansPage() {
                         <ConfirmDeleteButton
                           confirmText={`Törlöd a(z) "${w.name}" edzést? Minden feladata és a hozzá tartozó felhasználói haladás is törlődik.`}
                           toastText={`${w.name} törölve`}
-                          action={() => deleteWorkoutAction(level.id, w.id)}
+                          action={deleteWorkoutAction.bind(null, level.id, w.id)}
                         />
                       </div>
                     );
