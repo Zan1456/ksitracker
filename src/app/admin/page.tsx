@@ -4,6 +4,7 @@ import { getAdminUserList, isInactive } from "@/lib/admin-data";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { AdminUserList } from "@/components/admin-user-list";
+import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function AdminUsersPage() {
   await requireAdmin();
@@ -20,14 +21,16 @@ export default async function AdminUsersPage() {
           </span>
         </div>
         <Link
-          href="/admin/plans"
-          className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg"
+          href="/admin/users/new"
+          className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
         >
-          Edzéstervek
+          + Új
         </Link>
       </div>
 
-      <AdminUserList rows={withInactive} />
+      <PageTransition className="min-h-0">
+        <AdminUserList rows={withInactive} />
+      </PageTransition>
 
       <BottomNav variant="admin" />
     </AppShell>

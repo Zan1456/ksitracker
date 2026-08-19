@@ -2,7 +2,10 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { IconCheck } from "@/components/icons";
 import { formatSeconds } from "@/lib/format";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
 import type { LevelWithProgress } from "@/lib/workout-data";
+
+const pressClass = "transition-transform active:scale-[0.98]";
 
 export function LevelList({
   levels,
@@ -12,13 +15,13 @@ export function LevelList({
   dailyLimitAllowed: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-5">
+    <StaggerContainer className="flex flex-col gap-5">
       {levels.map((level) => {
         const isFullyDone = level.totalCount > 0 && level.doneCount === level.totalCount;
         const nextIndex = level.workouts.findIndex((w) => !w.done);
 
         return (
-          <div key={level.id} className="flex flex-col gap-2.25">
+          <StaggerItem key={level.id} className="flex flex-col gap-2.25">
             <div className={cn("flex items-center gap-2.25", level.locked && "opacity-50")}>
               <span className="mono text-[11px] text-text-faint">SZINT {level.index}</span>
               <span className="text-[14px] font-medium">{level.name}</span>
@@ -82,7 +85,7 @@ export function LevelList({
 
                   if (reachable && !blocked) {
                     return (
-                      <Link key={w.id} href={`/workout/${w.id}`} className={rowClass}>
+                      <Link key={w.id} href={`/workout/${w.id}`} className={cn(rowClass, pressClass)}>
                         {content}
                       </Link>
                     );
@@ -95,9 +98,9 @@ export function LevelList({
                 })}
               </div>
             )}
-          </div>
+          </StaggerItem>
         );
       })}
-    </div>
+    </StaggerContainer>
   );
 }

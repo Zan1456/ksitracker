@@ -11,6 +11,8 @@ import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { Avatar } from "@/components/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PageTransition } from "@/components/motion/page-transition";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "./actions";
 
@@ -37,7 +39,7 @@ export default async function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="flex flex-1 flex-col gap-5 px-5 pb-6 pt-5">
+      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-5">
         <div className="flex items-center gap-3.5">
           <Avatar name={user.name ?? "?"} size={52} />
           <div className="flex-1">
@@ -97,19 +99,24 @@ export default async function ProfilePage() {
           {history.length === 0 && (
             <p className="py-3 text-[12.5px] text-text-muted">Még nincs teljesített edzésed.</p>
           )}
-          {history.map((h) => (
-            <div key={h.sessionId} className="flex items-center gap-3 border-b border-border py-3">
-              <div className="flex-1">
-                <div className="text-[13px] font-medium">{h.workoutName}</div>
-                <div className="mono mt-1 text-[10.5px] text-text-faint">
-                  {relativeDateLabel(h.sessionDate, h.levelIndex)}
+          <StaggerContainer className="flex flex-col">
+            {history.map((h) => (
+              <StaggerItem
+                key={h.sessionId}
+                className="flex items-center gap-3 border-b border-border py-3"
+              >
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium">{h.workoutName}</div>
+                  <div className="mono mt-1 text-[10.5px] text-text-faint">
+                    {relativeDateLabel(h.sessionDate, h.levelIndex)}
+                  </div>
                 </div>
-              </div>
-              <span className="mono text-[12.5px] text-text-secondary">
-                {h.totalSeconds ? formatSeconds(h.totalSeconds) : "—"}
-              </span>
-            </div>
-          ))}
+                <span className="mono text-[12.5px] text-text-secondary">
+                  {h.totalSeconds ? formatSeconds(h.totalSeconds) : "—"}
+                </span>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
 
         <form action={signOutAction} className="mt-1">
@@ -117,7 +124,7 @@ export default async function ProfilePage() {
             Kijelentkezés
           </button>
         </form>
-      </div>
+      </PageTransition>
 
       <BottomNav variant="user" />
     </AppShell>

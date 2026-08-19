@@ -2,6 +2,8 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { getAppStats } from "@/lib/admin-data";
 import { AppShell, AppHeader } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
+import { PageTransition } from "@/components/motion/page-transition";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
 
 export default async function AdminStatsPage() {
   await requireAdmin();
@@ -21,19 +23,19 @@ export default async function AdminStatsPage() {
     <AppShell>
       <AppHeader title="Statisztika" />
 
-      <div className="flex flex-1 flex-col gap-2.5 px-5 py-4">
-        <div className="grid grid-cols-2 gap-2.5">
+      <PageTransition className="gap-2.5 overflow-y-auto px-5 py-4">
+        <StaggerContainer className="grid grid-cols-2 gap-2.5">
           {tiles.map((t) => (
-            <div key={t.label} className="rounded-[10px] border border-border p-3.5">
+            <StaggerItem key={t.label} className="rounded-[10px] border border-border p-3.5">
               <div className="mono mb-2 text-[10px] text-text-faint">{t.label}</div>
               <div className="text-[20px] font-medium">
                 {t.value}
                 {t.suffix && <span className="ml-1 text-[12px] text-text-faint">{t.suffix}</span>}
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
-      </div>
+        </StaggerContainer>
+      </PageTransition>
 
       <BottomNav variant="admin" />
     </AppShell>

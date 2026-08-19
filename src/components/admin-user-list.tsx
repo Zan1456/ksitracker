@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { Input } from "@/components/ui/input";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
 import { cn } from "@/lib/cn";
 import type { AdminUserRow } from "@/lib/admin-data";
 
@@ -64,18 +65,18 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
+      <StaggerContainer className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
         {filtered.length === 0 && (
           <p className="py-6 text-center text-[13px] text-text-muted">Nincs találat.</p>
         )}
         {filtered.map((r) => {
           const pct = r.totalCount > 0 ? Math.round((r.doneCount / r.totalCount) * 100) : 0;
           return (
+            <StaggerItem key={r.id}>
             <Link
-              key={r.id}
               href={`/admin/users/${r.id}`}
               className={cn(
-                "flex items-center gap-3 rounded-[10px] border border-border bg-bg-elevated p-3.25",
+                "flex items-center gap-3 rounded-[10px] border border-border bg-bg-elevated p-3.25 transition-transform active:scale-[0.98]",
                 r.isBanned && "opacity-60"
               )}
             >
@@ -107,9 +108,10 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
               </div>
               <span className="text-[14px] text-text-faint">›</span>
             </Link>
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

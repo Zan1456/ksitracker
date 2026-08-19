@@ -10,6 +10,9 @@ import { formatMs } from "@/lib/format";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { CategorySelect } from "@/components/category-select";
+import { PageTransition } from "@/components/motion/page-transition";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
+import { AnimatedBar } from "@/components/motion/animated-bar";
 import { cn } from "@/lib/cn";
 
 function formatValue(kind: "time" | "reps", value: number) {
@@ -76,7 +79,7 @@ export default async function LeaderboardPage({
           Még nincs rögzített stopperes eredmény.
         </div>
       ) : (
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 pt-4.5 pb-5">
+        <PageTransition className="gap-4 overflow-y-auto px-5 pt-4.5 pb-5">
           {ownRow && (
             <div className="rounded-[11px] border border-border bg-bg-inset p-3.75">
               <div className="mb-4 flex items-end justify-between">
@@ -97,9 +100,9 @@ export default async function LeaderboardPage({
                     const isLast = i === trend.points.length - 1;
                     return (
                       <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1.75">
-                        <div
-                          className={cn("w-full rounded-t-[5px]", isLast ? "bg-text" : "bg-bg-elevated")}
-                          style={{ height: barHeight(p.value) }}
+                        <AnimatedBar
+                          height={barHeight(p.value)}
+                          className={isLast ? "bg-text" : "bg-bg-elevated"}
                         />
                         <div
                           className={cn(
@@ -122,7 +125,7 @@ export default async function LeaderboardPage({
               <span>TOP 5 · {rows.length} RÉSZTVEVŐ</span>
               <span>LEGJOBB IDŐ</span>
             </div>
-            <div className="flex flex-col gap-1.75">
+            <StaggerContainer className="flex flex-col gap-1.75">
               {top5.length === 0 && (
                 <p className="py-4 text-center text-[12.5px] text-text-muted">
                   Ebben a kategóriában még senki nem rögzített eredményt.
@@ -132,7 +135,7 @@ export default async function LeaderboardPage({
                 const isMe = row.userId === user.id;
                 const isFirst = row.rank === 1;
                 return (
-                  <div
+                  <StaggerItem
                     key={row.userId}
                     className={cn(
                       "flex items-center gap-3 rounded-[9px] border px-3.25 py-2.75",
@@ -162,10 +165,10 @@ export default async function LeaderboardPage({
                     >
                       {formatValue(category.resultKind, row.value)}
                     </span>
-                  </div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerContainer>
           </div>
 
           {ownRow && ownRow.rank > 5 && (
@@ -177,7 +180,7 @@ export default async function LeaderboardPage({
               </span>
             </div>
           )}
-        </div>
+        </PageTransition>
       )}
 
       <BottomNav variant="user" />

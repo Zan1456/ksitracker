@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { Avatar } from "@/components/avatar";
 import { LevelList } from "@/components/level-list";
 import { DailyLimitCountdownBanner, InProgressBanner } from "@/components/daily-limit-banner";
+import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function HomePage() {
   const user = await requireUser();
@@ -41,7 +42,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4.5 overflow-y-auto px-5 pb-6 pt-4.5">
+      <PageTransition className="gap-4.5 overflow-y-auto px-5 pb-6 pt-4.5">
         <div>
           <h1 className="mb-1.25 text-[23px] font-medium leading-[1.15] tracking-[-0.03em]">
             Szia, {firstName}
@@ -59,7 +60,7 @@ export default async function HomePage() {
         )}
 
         <LevelList levels={levels} dailyLimitAllowed={limit.canStartNew} />
-      </div>
+      </PageTransition>
 
       <BottomNav variant="user" />
     </AppShell>

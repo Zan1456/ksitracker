@@ -1,4 +1,7 @@
+"use client";
+
 import { ButtonHTMLAttributes, forwardRef } from "react";
+import { motion, type HTMLMotionProps } from "motion/react";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -18,21 +21,28 @@ const sizeClasses: Record<Size, string> = {
   lg: "px-5 py-4 text-[15px]",
 };
 
-export const Button = forwardRef<
-  HTMLButtonElement,
-  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }
->(({ className, variant = "primary", size = "md", ...props }, ref) => {
-  return (
-    <button
-      ref={ref}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  );
-});
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  size?: Size;
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "primary", size = "md", disabled, ...props }, ref) => {
+    return (
+      <motion.button
+        ref={ref}
+        disabled={disabled}
+        whileTap={disabled ? undefined : { scale: 0.97 }}
+        transition={{ duration: 0.1 }}
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+          variantClasses[variant],
+          sizeClasses[size],
+          className
+        )}
+        {...(props as HTMLMotionProps<"button">)}
+      />
+    );
+  }
+);
 Button.displayName = "Button";

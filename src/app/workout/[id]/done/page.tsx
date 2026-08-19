@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth-helpers";
 import { getWorkoutWithTasks } from "@/lib/workout-data";
 import { formatSeconds } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { IconCheck } from "@/components/icons";
+import { SuccessCheck, FadeUp } from "@/components/motion/success-check";
 
 export default async function WorkoutDonePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,30 +29,32 @@ export default async function WorkoutDonePage({ params }: { params: Promise<{ id
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col items-center justify-center gap-6 px-7 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full border border-success-border bg-success-bg text-success">
-        <IconCheck width={28} height={28} strokeWidth={2.5} />
-      </div>
-      <div>
+      <SuccessCheck />
+      <FadeUp delay={0.15}>
         <h1 className="mb-1.5 text-[24px] font-medium tracking-[-0.03em]">Edzés kész!</h1>
         <p className="text-[14px] text-text-muted">{data?.workout.name}</p>
-      </div>
+      </FadeUp>
       {session?.totalSeconds && (
-        <div className="mono text-[13px] text-text-faint">
-          Teljes idő: {formatSeconds(session.totalSeconds)}
-        </div>
+        <FadeUp delay={0.22}>
+          <div className="mono text-[13px] text-text-faint">
+            Teljes idő: {formatSeconds(session.totalSeconds)}
+          </div>
+        </FadeUp>
       )}
-      <div className="mt-2 flex w-full flex-col gap-2.5">
-        <Link href="/">
-          <Button size="lg" className="w-full">
-            Vissza a kezdőlapra
-          </Button>
-        </Link>
-        <Link href="/leaderboard">
-          <Button variant="secondary" size="lg" className="w-full">
-            Ranglista megtekintése
-          </Button>
-        </Link>
-      </div>
+      <FadeUp delay={0.3}>
+        <div className="mt-2 flex w-full flex-col gap-2.5">
+          <Link href="/">
+            <Button size="lg" className="w-full">
+              Vissza a kezdőlapra
+            </Button>
+          </Link>
+          <Link href="/leaderboard">
+            <Button variant="secondary" size="lg" className="w-full">
+              Ranglista megtekintése
+            </Button>
+          </Link>
+        </div>
+      </FadeUp>
     </div>
   );
 }

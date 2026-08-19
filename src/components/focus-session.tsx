@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatSeconds } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast-store";
 import { completeTaskAction, completeSessionAction, abandonSessionAction } from "@/app/workout/actions";
 
 type LiveTask = {
@@ -393,11 +394,13 @@ export function FocusSession({
   }, [index]);
 
   function handleComplete(result: TaskResult) {
+    const finishedTask = task!;
     startTransition(async () => {
-      await completeTaskAction({ sessionId, taskId: task!.id, ...result });
+      await completeTaskAction({ sessionId, taskId: finishedTask.id, ...result });
       if (index + 1 >= tasks.length) {
         await completeSessionAction(sessionId);
       } else {
+        toast(`${finishedTask.name} kész`, "success");
         setIndex((i) => i + 1);
       }
     });
@@ -405,6 +408,7 @@ export function FocusSession({
 
   function quit() {
     if (!confirm("Biztosan megszakítod az edzést? A haladásod nem lesz kész.")) return;
+    toast("Edzés megszakítva", "info");
     startTransition(() => abandonSessionAction(sessionId));
   }
 

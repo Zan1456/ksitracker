@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { IconDumbbell, IconTrophy, IconUser, IconUsers, IconClipboard, IconChart } from "./icons";
 import { ComponentType, SVGProps } from "react";
@@ -23,6 +24,7 @@ const adminItems: Item[] = [
 export function BottomNav({ variant = "user" }: { variant?: "user" | "admin" }) {
   const pathname = usePathname();
   const items = variant === "admin" ? adminItems : userItems;
+  const layoutGroup = variant === "admin" ? "admin-nav" : "user-nav";
 
   return (
     <nav className="sticky bottom-0 mt-auto flex border-t border-border bg-bg-inset">
@@ -33,13 +35,21 @@ export function BottomNav({ variant = "user" }: { variant?: "user" | "admin" }) 
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-1.5 py-3 pb-4 text-center text-[10.5px] font-medium transition-colors",
-              active ? "text-text" : "text-text-faint hover:text-text-muted"
-            )}
+            className="relative flex flex-1 flex-col items-center gap-1.5 py-3 pb-4 text-center text-[10.5px] font-medium"
           >
-            <Icon width={17} height={17} strokeWidth={active ? 2 : 1.6} />
-            {item.label}
+            {active && (
+              <motion.div
+                layoutId={layoutGroup}
+                className="absolute inset-x-2.5 top-0.5 h-[2px] rounded-full bg-text"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className={cn("transition-colors", active ? "text-text" : "text-text-faint")}>
+              <Icon width={17} height={17} strokeWidth={active ? 2 : 1.6} />
+            </span>
+            <span className={cn("transition-colors", active ? "text-text" : "text-text-faint")}>
+              {item.label}
+            </span>
           </Link>
         );
       })}

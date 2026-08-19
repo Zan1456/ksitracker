@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { IconArrowLeft, IconLock } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { startSessionAction } from "@/app/workout/actions";
+import { PageTransition } from "@/components/motion/page-transition";
+import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
 
 export default async function WorkoutOverviewPage({
   params,
@@ -41,7 +43,7 @@ export default async function WorkoutOverviewPage({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4.5 overflow-y-auto px-5 pb-6 pt-5">
+      <PageTransition className="gap-4.5 overflow-y-auto px-5 pb-6 pt-5">
         <div>
           <h1 className="mb-2 text-[24px] font-medium leading-[1.15] tracking-[-0.03em]">
             {data.workout.name}
@@ -64,11 +66,11 @@ export default async function WorkoutOverviewPage({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <StaggerContainer className="flex flex-col gap-2">
           {data.tasks.map((t, i) => {
             const row = taskRowDisplay(t);
             return (
-              <div
+              <StaggerItem
                 key={t.id}
                 className="flex items-center gap-3.25 rounded-[9px] border border-border bg-bg-elevated p-3.25"
               >
@@ -89,10 +91,10 @@ export default async function WorkoutOverviewPage({
                 >
                   {row.value}
                 </span>
-              </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
 
         <div className="mt-auto pt-1">
           {access.locked ? (
@@ -121,7 +123,7 @@ export default async function WorkoutOverviewPage({
             </form>
           )}
         </div>
-      </div>
+      </PageTransition>
     </AppShell>
   );
 }

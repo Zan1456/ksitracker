@@ -2,12 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { getAdminUserDetail } from "@/lib/admin-data";
+import { getHistory } from "@/lib/workout-data";
 import { formatMs, formatDateHu } from "@/lib/format";
 import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { IconArrowLeft, IconCheck } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { PageTransition } from "@/components/motion/page-transition";
+import { EditUserPanel } from "@/components/admin/edit-user-panel";
+import { SessionHistoryList } from "@/components/admin/session-history-list";
 import { toggleBanAction, resetDailyLimitAction } from "@/app/admin/actions";
 
 export default async function AdminUserDetailPage({
@@ -15,9 +19,9 @@ export default async function AdminUserDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const { id } = await params;
-  const detail = await getAdminUserDetail(id);
+  const [detail, history] = await Promise.all([getAdminUserDetail(id), getHistory(id, 10)]);
   if (!detail) notFound();
 
   const { user, levelsProgress, doneCount, totalCount, rank, totalUsers, bestTimes, streakDays, hasBonusToday } =
@@ -35,7 +39,7 @@ export default async function AdminUserDetailPage({
         <span className="text-[13.5px] font-medium text-text-secondary">Felhasználók</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-5 px-5 pb-6 pt-4.5">
+      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-4.5">
         <div className="flex items-center gap-3.5">
           <Avatar name={user.name} size={46} />
           <div className="flex-1">
@@ -77,6 +81,8 @@ export default async function AdminUserDetailPage({
             </div>
           </div>
         </div>
+
+        <EditUserPanel user={user} isSelf={admin.id === user.id} />
 
         <div className="flex flex-col gap-2">
           <div className="mono text-[10.5px] text-text-faint">SZINTENKÉNTI KÉSZÜLTSÉG</div>
@@ -131,6 +137,11 @@ export default async function AdminUserDetailPage({
           ))}
         </div>
 
+        <div className="flex flex-col gap-1">
+          <div className="mono mb-1 text-[10.5px] text-text-faint">EDZÉSNAPLÓ</div>
+          <SessionHistoryList userId={user.id} history={history} />
+        </div>
+
         <div className="mt-auto flex gap-2.25 pb-1">
           <form action={resetDailyLimitAction.bind(null, user.id)} className="flex-1">
             <Button
@@ -149,7 +160,7 @@ export default async function AdminUserDetailPage({
             </Button>
           </form>
         </div>
-      </div>
+      </PageTransition>
     </AppShell>
   );
 }
