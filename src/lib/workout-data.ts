@@ -11,6 +11,9 @@ export type WorkoutWithStatus = WorkoutDTO & {
   done: boolean;
   bestSeconds: number | null;
   lastCompletedAt: string | null;
+  /** Completed specifically on today's calendar date. */
+  doneToday: boolean;
+  taskCount: number;
 };
 
 export type LevelWithProgress = LevelDTO & {
@@ -32,16 +35,27 @@ async function getCompletedSessions(userId: string) {
 export async function getLevelsWithProgress(userId: string): Promise<LevelWithProgress[]> {
   const allLevels = await db.select().from(levels).orderBy(asc(levels.order));
   const allWorkouts = await db.select().from(workouts).orderBy(asc(workouts.order));
+  const allTasks = await db
+    .select({ workoutId: workoutTasks.workoutId, id: workoutTasks.id })
+    .from(workoutTasks);
+  const taskCountByWorkout = new Map<string, number>();
+  for (const t of allTasks) {
+    taskCountByWorkout.set(t.workoutId, (taskCountByWorkout.get(t.workoutId) ?? 0) + 1);
+  }
   const completed = await getCompletedSessions(userId);
 
-  const bestByWorkout = new Map<string, { seconds: number | null; completedAt: string | null }>();
+  const today = todayIso();
+  const bestByWorkout = new Map<
+    string,
+    { seconds: number | null; completedAt: string | null; sessionDate: string }
+  >();
   for (const s of completed) {
     const existing = bestByWorkout.get(s.workoutId);
     const completedAt = s.completedAt?.toISOString() ?? null;
     if (!existing) {
-      bestByWorkout.set(s.workoutId, { seconds: s.totalSeconds, completedAt });
+      bestByWorkout.set(s.workoutId, { seconds: s.totalSeconds, completedAt, sessionDate: s.sessionDate });
     } else if (completedAt && (!existing.completedAt || completedAt > existing.completedAt)) {
-      bestByWorkout.set(s.workoutId, { seconds: s.totalSeconds, completedAt });
+      bestByWorkout.set(s.workoutId, { seconds: s.totalSeconds, completedAt, sessionDate: s.sessionDate });
     }
   }
 
@@ -57,6 +71,8 @@ export async function getLevelsWithProgress(userId: string): Promise<LevelWithPr
         done: !!best,
         bestSeconds: best?.seconds ?? null,
         lastCompletedAt: best?.completedAt ?? null,
+        doneToday: best?.sessionDate === today,
+        taskCount: taskCountByWorkout.get(w.id) ?? 0,
       };
     });
     const doneCount = withStatus.filter((w) => w.done).length;
@@ -73,6 +89,13 @@ export async function getLevelsWithProgress(userId: string): Promise<LevelWithPr
   }
 
   return result;
+}
+
+/** The level the user is currently working through (first unlocked, not-fully-done level; falls back to the last level once everything is done). */
+export function getCurrentLevelIndex(levelsProgress: LevelWithProgress[]): number {
+  const current = levelsProgress.find((l) => !l.locked && l.doneCount < l.totalCount);
+  if (current) return current.index;
+  return levelsProgress[levelsProgress.length - 1]?.index ?? 1;
 }
 
 export async function getWorkoutWithTasks(workoutId: string) {

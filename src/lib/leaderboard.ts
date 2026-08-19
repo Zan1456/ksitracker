@@ -1,6 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
 import { taskResults, workoutTasks, users, workoutSessions } from "@/db/schema";
+
+export type LeaderboardScope = "week" | "alltime";
 
 export type LeaderboardCategory = {
   name: string;
@@ -35,7 +37,19 @@ export async function getLeaderboardCategories(): Promise<LeaderboardCategory[]>
   return Array.from(byName.values());
 }
 
-export async function getLeaderboard(categoryName: string): Promise<{
+function mondayOfCurrentWeekIso(): string {
+  const now = new Date();
+  const jsDay = now.getUTCDay(); // 0 = sunday
+  const offset = (jsDay + 6) % 7;
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - offset);
+  return monday.toISOString().slice(0, 10);
+}
+
+export async function getLeaderboard(
+  categoryName: string,
+  scope: LeaderboardScope = "alltime"
+): Promise<{
   category: LeaderboardCategory | null;
   rows: LeaderboardRow[];
 }> {
@@ -58,7 +72,8 @@ export async function getLeaderboard(categoryName: string): Promise<{
       and(
         eq(workoutTasks.name, categoryName),
         eq(workoutTasks.type, "stopwatch"),
-        eq(taskResults.completed, true)
+        eq(taskResults.completed, true),
+        scope === "week" ? gte(workoutSessions.sessionDate, mondayOfCurrentWeekIso()) : undefined
       )
     );
 
@@ -83,4 +98,47 @@ export async function getLeaderboard(categoryName: string): Promise<{
   const rows: LeaderboardRow[] = sorted.map((r, i) => ({ ...r, rank: i + 1 }));
 
   return { category, rows };
+}
+
+export type TrendPoint = { value: number; date: string };
+
+/** The user's last `limit` recorded results for a category, oldest first (for a trend chart). */
+export async function getPersonalTrend(
+  userId: string,
+  categoryName: string,
+  limit = 5
+): Promise<{ category: LeaderboardCategory | null; points: TrendPoint[] }> {
+  const categories = await getLeaderboardCategories();
+  const category = categories.find((c) => c.name === categoryName) ?? null;
+  if (!category) return { category: null, points: [] };
+
+  const results = await db
+    .select({
+      resultMs: taskResults.resultMs,
+      resultReps: taskResults.resultReps,
+      completedAt: taskResults.completedAt,
+      sessionDate: workoutSessions.sessionDate,
+    })
+    .from(taskResults)
+    .innerJoin(workoutTasks, eq(taskResults.taskId, workoutTasks.id))
+    .innerJoin(workoutSessions, eq(taskResults.sessionId, workoutSessions.id))
+    .where(
+      and(
+        eq(workoutSessions.userId, userId),
+        eq(workoutTasks.name, categoryName),
+        eq(workoutTasks.type, "stopwatch"),
+        eq(taskResults.completed, true)
+      )
+    )
+    .orderBy(asc(taskResults.completedAt));
+
+  const points: TrendPoint[] = results
+    .map((r) => ({
+      value: category.resultKind === "time" ? r.resultMs : r.resultReps,
+      date: r.sessionDate,
+    }))
+    .filter((p): p is TrendPoint => p.value !== null && p.value !== undefined)
+    .slice(-limit);
+
+  return { category, points };
 }

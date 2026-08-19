@@ -62,6 +62,28 @@ export function timeUntilNextDayLabel(): string {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} MÚLVA`;
 }
 
+/** Milliseconds remaining until the next UTC day starts. */
+export function msUntilNextDay(): number {
+  const now = new Date();
+  const next = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0)
+  );
+  return next.getTime() - now.getTime();
+}
+
+/** "09:41:22" style H:MM:SS, for a live-ticking countdown. */
+export function formatHMS(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function difficultyLabel(d: "easy" | "medium" | "hard"): string {
+  return d === "easy" ? "KÖNNYŰ" : d === "hard" ? "NEHÉZ" : "KÖZEPES";
+}
+
 type TaskLike = {
   type: "reps" | "time" | "stopwatch";
   targetReps?: number | null;
@@ -84,6 +106,41 @@ export function taskMetaLabel(t: TaskLike): string {
   if (t.resultKind === "reps") return "60 MP · AMRAP";
   if (t.targetDistanceMeters) return `${t.targetDistanceMeters} M · STOPPER`;
   return "STOPPER";
+}
+
+type FullTaskLike = TaskLike & {
+  perSide?: boolean;
+  restSeconds?: number | null;
+};
+
+export type TaskRowDisplay = { subtext: string | null; value: string; amber: boolean };
+
+/** Subtext + right-aligned value for the workout-detail task row (mockup 1f). */
+export function taskRowDisplay(t: FullTaskLike): TaskRowDisplay {
+  if (t.type === "reps") {
+    const subtext =
+      t.rounds > 1
+        ? `${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`
+        : null;
+    const reps = t.targetReps ?? 0;
+    const value = t.perSide ? `${reps}+${reps} db` : `${reps} db`;
+    return { subtext, value, amber: false };
+  }
+  if (t.type === "time") {
+    const subtext =
+      t.rounds > 1
+        ? `IDŐZÍTŐVEL · ${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`
+        : "IDŐZÍTŐVEL";
+    return { subtext, value: formatSeconds(t.targetSeconds ?? 0), amber: true };
+  }
+  // stopwatch — always leaderboard-eligible in this app
+  const subtext = "STOPPEREZETT · RANGLISTA";
+  const value = t.targetDistanceMeters
+    ? `${t.targetDistanceMeters} m`
+    : t.resultKind === "reps"
+      ? "60 mp"
+      : "stopper";
+  return { subtext, value, amber: t.resultKind === "reps" };
 }
 
 export function formatDateHu(iso: string): string {

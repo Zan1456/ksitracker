@@ -22,6 +22,7 @@ export const rankDirectionEnum = pgEnum("rank_direction", ["asc", "desc"]);
 // For stopwatch tasks: whether the logged personal result is a duration (mm:ss.d)
 // or a rep count (e.g. an AMRAP-style "how many in 60s" test).
 export const resultKindEnum = pgEnum("result_kind", ["time", "reps"]);
+export const difficultyEnum = pgEnum("difficulty", ["easy", "medium", "hard"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -44,35 +45,47 @@ export const levels = pgTable("levels", {
   order: integer("order").notNull(),
 });
 
-export const workouts = pgTable("workouts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  levelId: uuid("level_id")
-    .notNull()
-    .references(() => levels.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  order: integer("order").notNull(),
-  estimatedMinutes: integer("estimated_minutes").notNull().default(20),
-});
+export const workouts = pgTable(
+  "workouts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    levelId: uuid("level_id")
+      .notNull()
+      .references(() => levels.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    difficulty: difficultyEnum("difficulty").notNull().default("medium"),
+    order: integer("order").notNull(),
+    estimatedMinutes: integer("estimated_minutes").notNull().default(20),
+  },
+  (t) => [uniqueIndex("workouts_level_order_idx").on(t.levelId, t.order)]
+);
 
-export const workoutTasks = pgTable("workout_tasks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workoutId: uuid("workout_id")
-    .notNull()
-    .references(() => workouts.id, { onDelete: "cascade" }),
-  order: integer("order").notNull(),
-  name: text("name").notNull(),
-  note: text("note"), // e.g. "90 fokos szög"
-  type: taskTypeEnum("type").notNull(),
-  // reps
-  targetReps: integer("target_reps"),
-  // time (countdown hold, e.g. plank-style timed task guided by the focus timer)
-  targetSeconds: integer("target_seconds"),
-  // stopwatch (leaderboard-eligible: user logs their own result)
-  targetDistanceMeters: integer("target_distance_meters"),
-  rankDirection: rankDirectionEnum("rank_direction"), // asc = lower is better, desc = higher is better
-  resultKind: resultKindEnum("result_kind"), // time or reps, for stopwatch tasks
-  rounds: integer("rounds").notNull().default(1),
-});
+export const workoutTasks = pgTable(
+  "workout_tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workoutId: uuid("workout_id")
+      .notNull()
+      .references(() => workouts.id, { onDelete: "cascade" }),
+    order: integer("order").notNull(),
+    name: text("name").notNull(),
+    note: text("note"), // e.g. "90 fokos szög"
+    type: taskTypeEnum("type").notNull(),
+    // reps
+    targetReps: integer("target_reps"),
+    perSide: boolean("per_side").notNull().default(false), // e.g. "12+12 db"
+    // time (countdown hold, e.g. plank-style timed task guided by the focus timer)
+    targetSeconds: integer("target_seconds"),
+    // stopwatch (leaderboard-eligible: user logs their own result)
+    targetDistanceMeters: integer("target_distance_meters"),
+    rankDirection: rankDirectionEnum("rank_direction"), // asc = lower is better, desc = higher is better
+    resultKind: resultKindEnum("result_kind"), // time or reps, for stopwatch tasks
+    rounds: integer("rounds").notNull().default(1),
+    restSeconds: integer("rest_seconds"), // rest between rounds, when rounds > 1
+  },
+  (t) => [uniqueIndex("workout_tasks_workout_order_idx").on(t.workoutId, t.order)]
+);
 
 export const workoutSessions = pgTable("workout_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
