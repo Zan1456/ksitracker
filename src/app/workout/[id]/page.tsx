@@ -94,7 +94,9 @@ export default async function WorkoutOverviewPage({
               </Button>
               {(!limit.canStartNew || limitParam) && (
                 <p className="mt-2.5 text-center text-[12px] text-text-muted">
-                  Elérted a napi edzéslimitet. Gyere vissza holnap, vagy kérj feloldást egy adminisztrátortól.
+                  {limit.reason === "already_in_progress"
+                    ? "Egy másik edzésed van folyamatban — előbb azt fejezd be."
+                    : "Elérted a napi edzéslimitet. Gyere vissza holnap, vagy kérj feloldást egy adminisztrátortól."}
                 </p>
               )}
             </form>
