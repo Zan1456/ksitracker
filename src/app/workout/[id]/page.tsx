@@ -22,11 +22,13 @@ export default async function WorkoutOverviewPage({
   const { limit: limitParam } = await searchParams;
   const user = await requireUser();
 
-  const access = await getWorkoutAccess(user.id, id);
-  const data = await getWorkoutWithTasks(id);
+  const [access, data, limit] = await Promise.all([
+    getWorkoutAccess(user.id, id),
+    getWorkoutWithTasks(id),
+    getDailyLimitInfo(user.id),
+  ]);
   if (!access || !data) notFound();
 
-  const limit = await getDailyLimitInfo(user.id);
   const isCurrentInProgress = limit.inProgressWorkoutId === id;
 
   return (

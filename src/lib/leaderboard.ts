@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, asc, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
 import { taskResults, workoutTasks, users, workoutSessions } from "@/db/schema";
@@ -17,7 +18,12 @@ export type LeaderboardRow = {
   rank: number;
 };
 
-export async function getLeaderboardCategories(): Promise<LeaderboardCategory[]> {
+/**
+ * `getLeaderboard` and `getPersonalTrend` both look this up internally, and
+ * the leaderboard page also calls it directly — `cache()` collapses all of
+ * those into a single query per request instead of one each.
+ */
+export const getLeaderboardCategories = cache(async (): Promise<LeaderboardCategory[]> => {
   const rows = await db
     .select({
       name: workoutTasks.name,
@@ -35,7 +41,7 @@ export async function getLeaderboardCategories(): Promise<LeaderboardCategory[]>
     }
   }
   return Array.from(byName.values());
-}
+});
 
 function mondayOfCurrentWeekIso(): string {
   const now = new Date();

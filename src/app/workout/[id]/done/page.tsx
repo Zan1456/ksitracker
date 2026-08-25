@@ -12,20 +12,21 @@ export default async function WorkoutDonePage({ params }: { params: Promise<{ id
   const { id } = await params;
   const user = await requireUser();
 
-  const [session] = await db
-    .select()
-    .from(workoutSessions)
-    .where(
-      and(
-        eq(workoutSessions.userId, user.id),
-        eq(workoutSessions.workoutId, id),
-        eq(workoutSessions.status, "completed")
+  const [[session], data] = await Promise.all([
+    db
+      .select()
+      .from(workoutSessions)
+      .where(
+        and(
+          eq(workoutSessions.userId, user.id),
+          eq(workoutSessions.workoutId, id),
+          eq(workoutSessions.status, "completed")
+        )
       )
-    )
-    .orderBy(desc(workoutSessions.completedAt))
-    .limit(1);
-
-  const data = await getWorkoutWithTasks(id);
+      .orderBy(desc(workoutSessions.completedAt))
+      .limit(1),
+    getWorkoutWithTasks(id),
+  ]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col items-center justify-center gap-6 px-7 text-center">

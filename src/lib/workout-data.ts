@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { levels, workouts, workoutTasks, workoutSessions, users } from "@/db/schema";
@@ -23,26 +24,33 @@ export type LevelWithProgress = LevelDTO & {
   locked: boolean;
 };
 
-/** All completed sessions for a user, most recent first. */
-async function getCompletedSessions(userId: string) {
+/**
+ * All completed sessions for a user, most recent first.
+ * Wrapped in React's `cache()` so the several call sites that need this per
+ * request (streak, week strip, totals, activity grid, level progress) share
+ * one DB round-trip instead of each firing their own query.
+ */
+const getCompletedSessions = cache(async (userId: string) => {
   return db
     .select()
     .from(workoutSessions)
     .where(and(eq(workoutSessions.userId, userId), eq(workoutSessions.status, "completed")))
     .orderBy(asc(workoutSessions.completedAt));
-}
+});
 
 export async function getLevelsWithProgress(userId: string): Promise<LevelWithProgress[]> {
-  const allLevels = await db.select().from(levels).orderBy(asc(levels.order));
-  const allWorkouts = await db.select().from(workouts).orderBy(asc(workouts.order));
-  const allTasks = await db
-    .select({ workoutId: workoutTasks.workoutId, id: workoutTasks.id })
-    .from(workoutTasks);
+  // These four reads are independent, so fire them together instead of
+  // waiting on each Neon HTTP round-trip in turn.
+  const [allLevels, allWorkouts, allTasks, completed] = await Promise.all([
+    db.select().from(levels).orderBy(asc(levels.order)),
+    db.select().from(workouts).orderBy(asc(workouts.order)),
+    db.select({ workoutId: workoutTasks.workoutId, id: workoutTasks.id }).from(workoutTasks),
+    getCompletedSessions(userId),
+  ]);
   const taskCountByWorkout = new Map<string, number>();
   for (const t of allTasks) {
     taskCountByWorkout.set(t.workoutId, (taskCountByWorkout.get(t.workoutId) ?? 0) + 1);
   }
-  const completed = await getCompletedSessions(userId);
 
   const today = todayIso();
   const bestByWorkout = new Map<
@@ -99,13 +107,13 @@ export function getCurrentLevelIndex(levelsProgress: LevelWithProgress[]): numbe
 }
 
 export async function getWorkoutWithTasks(workoutId: string) {
-  const [workout] = await db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);
+  // Tasks only depend on workoutId, not on the workout row, so fetch them
+  // alongside it; the level lookup still has to wait on workout.levelId.
+  const [[workout], tasks] = await Promise.all([
+    db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1),
+    db.select().from(workoutTasks).where(eq(workoutTasks.workoutId, workoutId)).orderBy(asc(workoutTasks.order)),
+  ]);
   if (!workout) return null;
-  const tasks = await db
-    .select()
-    .from(workoutTasks)
-    .where(eq(workoutTasks.workoutId, workoutId))
-    .orderBy(asc(workoutTasks.order));
   const [level] = await db.select().from(levels).where(eq(levels.id, workout.levelId)).limit(1);
   return { workout, tasks, level };
 }

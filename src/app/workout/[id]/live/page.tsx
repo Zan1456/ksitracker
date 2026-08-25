@@ -10,21 +10,22 @@ export default async function WorkoutLivePage({ params }: { params: Promise<{ id
   const { id } = await params;
   const user = await requireUser();
 
-  const [session] = await db
-    .select()
-    .from(workoutSessions)
-    .where(
-      and(
-        eq(workoutSessions.userId, user.id),
-        eq(workoutSessions.workoutId, id),
-        eq(workoutSessions.status, "in_progress")
+  const [[session], data] = await Promise.all([
+    db
+      .select()
+      .from(workoutSessions)
+      .where(
+        and(
+          eq(workoutSessions.userId, user.id),
+          eq(workoutSessions.workoutId, id),
+          eq(workoutSessions.status, "in_progress")
+        )
       )
-    )
-    .limit(1);
+      .limit(1),
+    getWorkoutWithTasks(id),
+  ]);
 
   if (!session) redirect(`/workout/${id}`);
-
-  const data = await getWorkoutWithTasks(id);
   if (!data) redirect("/");
 
   const results = await db

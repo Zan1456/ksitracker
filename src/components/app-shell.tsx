@@ -18,7 +18,7 @@ export function AppHeader({
   eyebrow?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+    <div className="glass sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-5 py-4">
       <div className="flex items-center gap-2">
         {eyebrow}
         <h1 className="text-[17px] font-medium tracking-[-0.02em]">{title}</h1>

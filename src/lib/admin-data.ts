@@ -19,14 +19,12 @@ export type AdminUserRow = {
 const INACTIVE_THRESHOLD_DAYS = 14;
 
 export async function getAdminUserList(): Promise<AdminUserRow[]> {
-  const allUsers = await db.select().from(users).where(ne(users.role, "admin"));
-  const totalWorkoutsCount = await db.select().from(workouts);
-  const total = totalWorkoutsCount.length;
-
-  const allCompleted = await db
-    .select()
-    .from(workoutSessions)
-    .where(eq(workoutSessions.status, "completed"));
+  const [allUsers, allWorkouts, allCompleted] = await Promise.all([
+    db.select().from(users).where(ne(users.role, "admin")),
+    db.select().from(workouts),
+    db.select().from(workoutSessions).where(eq(workoutSessions.status, "completed")),
+  ]);
+  const total = allWorkouts.length;
 
   const today = todayIso();
 
@@ -64,10 +62,15 @@ export async function getAdminUserDetail(userId: string) {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return null;
 
-  const [levelsProgress, allUserRows, categories] = await Promise.all([
+  const [levelsProgress, allUserRows, categories, recentSessions] = await Promise.all([
     getLevelsWithProgress(userId),
     getAdminUserList(),
     getLeaderboardCategories(),
+    db
+      .select()
+      .from(workoutSessions)
+      .where(and(eq(workoutSessions.userId, userId), eq(workoutSessions.status, "completed")))
+      .orderBy(desc(workoutSessions.completedAt)),
   ]);
 
   const doneCount = levelsProgress.reduce((s, l) => s + l.doneCount, 0);
@@ -83,12 +86,6 @@ export async function getAdminUserDetail(userId: string) {
       return { category: c, row: mine ?? null };
     })
   );
-
-  const recentSessions = await db
-    .select()
-    .from(workoutSessions)
-    .where(and(eq(workoutSessions.userId, userId), eq(workoutSessions.status, "completed")))
-    .orderBy(desc(workoutSessions.completedAt));
 
   const streakDays = (() => {
     const days = new Set(recentSessions.map((s) => s.sessionDate));
@@ -121,13 +118,12 @@ export async function getAdminUserDetail(userId: string) {
 }
 
 export async function getAppStats() {
-  const allUsers = await db.select().from(users).where(ne(users.role, "admin"));
-  const completed = await db
-    .select()
-    .from(workoutSessions)
-    .where(eq(workoutSessions.status, "completed"));
-  const allWorkouts = await db.select().from(workouts);
-  const allLevels = await db.select().from(levels);
+  const [allUsers, completed, allWorkouts, allLevels] = await Promise.all([
+    db.select().from(users).where(ne(users.role, "admin")),
+    db.select().from(workoutSessions).where(eq(workoutSessions.status, "completed")),
+    db.select().from(workouts),
+    db.select().from(levels),
+  ]);
 
   const today = todayIso();
   const last7 = isoDaysAgo(7);
