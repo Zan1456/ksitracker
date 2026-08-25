@@ -1,7 +1,1 @@
-"use server";
-
-import { signOut } from "@/auth";
-
-export async function signOutAction() {
-  await signOut({ redirectTo: "/login" });
-}
+export { signOutAction } from "@/lib/auth-actions";

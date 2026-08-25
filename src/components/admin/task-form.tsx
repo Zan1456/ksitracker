@@ -50,14 +50,18 @@ export function TaskForm({
           >
             <option value="reps">Ismétlés</option>
             <option value="time">Idő</option>
-            <option value="stopwatch">Stopper</option>
+            <option value="stopwatch">Stopper (ranglistás)</option>
           </select>
         </label>
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <Label>Megjegyzés</Label>
-        <Input name="note" defaultValue={task?.note ?? ""} placeholder="pl. 90 fokos szög" />
+        <Label>Leírás</Label>
+        <Input
+          name="note"
+          defaultValue={task?.note ?? ""}
+          placeholder="Opcionális, pl. hogyan kell helyesen végezni"
+        />
       </label>
 
       {type === "reps" && (
@@ -131,6 +135,12 @@ export function TaskForm({
 
       {type === "stopwatch" && (
         <>
+          <p className="rounded-lg border border-border-strong bg-bg-inset px-3 py-2.5 text-[12px] leading-[1.5] text-text-muted">
+            A stopperes feladatok automatikusan bekerülnek a ranglistába. Válaszd ki, hogy a
+            felhasználók egy elért <strong className="text-text-secondary">időt</strong>, vagy egy{" "}
+            <strong className="text-text-secondary">ismétlésszámot</strong> rögzítsenek, és hogy melyik
+            eredmény számít jobbnak.
+          </p>
           <div className="flex gap-2.5">
             <label className="flex flex-1 flex-col gap-1.5">
               <Label>Táv (m) — opcionális</Label>

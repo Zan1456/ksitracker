@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { navItems, type NavVariant } from "@/lib/nav-items";
+import { IconLogout } from "@/components/icons";
+import { signOutAction } from "@/lib/auth-actions";
 
 export function BottomNav({ variant = "user" }: { variant?: NavVariant }) {
   const pathname = usePathname();
@@ -38,6 +40,18 @@ export function BottomNav({ variant = "user" }: { variant?: NavVariant }) {
           </Link>
         );
       })}
+
+      {variant === "admin" && (
+        <form action={signOutAction} className="flex flex-1">
+          <button
+            type="submit"
+            className="flex flex-1 flex-col items-center gap-1.5 py-3 pb-4 text-center text-[10.5px] font-medium text-text-faint"
+          >
+            <IconLogout width={17} height={17} strokeWidth={1.6} />
+            Kilépés
+          </button>
+        </form>
+      )}
     </nav>
   );
 }

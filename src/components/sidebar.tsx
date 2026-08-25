@@ -6,6 +6,8 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { navItems, type NavVariant } from "@/lib/nav-items";
 import { BrandMark } from "@/components/brand-mark";
+import { IconLogout } from "@/components/icons";
+import { signOutAction } from "@/lib/auth-actions";
 
 /**
  * Desktop-only counterpart to `BottomNav`: a persistent left rail instead of
@@ -61,6 +63,16 @@ export function Sidebar({ variant = "user" }: { variant?: NavVariant }) {
           );
         })}
       </nav>
+
+      <form action={signOutAction} className="mt-auto pt-2">
+        <button
+          type="submit"
+          className="flex w-full items-center gap-3 rounded-[9px] px-2.5 py-2.5 text-[13px] font-medium text-text-faint transition-colors hover:text-danger"
+        >
+          <IconLogout width={17} height={17} strokeWidth={1.6} />
+          Kijelentkezés
+        </button>
+      </form>
     </aside>
   );
 }

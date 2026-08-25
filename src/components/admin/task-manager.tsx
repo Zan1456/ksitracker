@@ -41,6 +41,9 @@ export function TaskManager({ workoutId, tasks }: { workoutId: string; tasks: Wo
                   className="min-w-0 flex-1 text-left"
                 >
                   <div className="truncate text-[13px] font-medium">{t.name}</div>
+                  {t.note && (
+                    <div className="mt-0.75 truncate text-[11.5px] text-text-muted">{t.note}</div>
+                  )}
                   {row.subtext && (
                     <div className="mono mt-1 text-[10px] text-text-faint">{row.subtext}</div>
                   )}

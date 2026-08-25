@@ -81,6 +81,9 @@ export default async function WorkoutOverviewPage({
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13.5px] font-medium">{t.name}</div>
+                  {t.note && (
+                    <div className="mt-1 text-[11.5px] leading-[1.4] text-text-muted">{t.note}</div>
+                  )}
                   {row.subtext && (
                     <div className="mono mt-1.25 text-[11px] text-text-faint">{row.subtext}</div>
                   )}
