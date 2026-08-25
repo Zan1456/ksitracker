@@ -45,7 +45,7 @@ export default async function LeaderboardPage({
 
   return (
     <AppShell>
-      <div className="border-b border-border px-5 pb-3.5 pt-4">
+      <div className="glass sticky top-0 z-10 border-b px-5 pb-3.5 pt-4">
         <h1 className="mb-3.5 text-[22px] font-medium leading-[1.2] tracking-[-0.03em]">Ranglista</h1>
 
         {categories.length > 0 && selected && (

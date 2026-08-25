@@ -33,7 +33,7 @@ export default async function WorkoutOverviewPage({
 
   return (
     <AppShell>
-      <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
+      <div className="glass sticky top-0 z-10 flex items-center gap-3 border-b px-5 py-3.5">
         <Link
           href="/"
           className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-border text-text-secondary"

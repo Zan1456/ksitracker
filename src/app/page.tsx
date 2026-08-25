@@ -30,7 +30,7 @@ export default async function HomePage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+      <div className="glass sticky top-0 z-10 flex items-center justify-between border-b px-5 py-3.5">
         <BrandMark />
         <div className="flex items-center gap-2.25">
           <span className="mono rounded-full border border-border-strong px-2.5 py-1.5 text-[11px] font-medium text-text-muted">
