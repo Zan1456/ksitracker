@@ -31,7 +31,7 @@ export default async function EditWorkoutPage({
   ]);
 
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
           href={`/admin/plans/levels/${workout.levelId}`}

@@ -38,7 +38,7 @@ export default async function ProfilePage() {
   const doneWorkouts = levels.reduce((s, l) => s + l.doneCount, 0);
 
   return (
-    <AppShell>
+    <AppShell nav="user">
       <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-5">
         <div className="flex items-center gap-3.5">
           <Avatar name={user.name ?? "?"} size={52} />

@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function AdminPlansLoading() {
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <AppHeader title="Edzéstervek" />
       <div className="flex flex-1 flex-col gap-5 px-5 py-4">
         {Array.from({ length: 3 }, (_, i) => (

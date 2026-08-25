@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function ProfileLoading() {
   return (
-    <AppShell>
+    <AppShell nav="user">
       <div className="flex flex-1 flex-col gap-5 px-5 pb-6 pt-5">
         <div className="flex items-center gap-3.5">
           <Skeleton className="h-[52px] w-[52px] rounded-full" />

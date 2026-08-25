@@ -12,7 +12,7 @@ export default async function AdminUsersPage() {
   const withInactive = rows.map((r) => ({ ...r, inactive: isInactive(r) }));
 
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <div className="flex items-center gap-2">
           <span className="text-[16px] font-medium tracking-[-0.02em]">Felhasználók</span>

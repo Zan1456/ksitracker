@@ -46,7 +46,7 @@ export function LevelList({
             )}
 
             {!level.locked && !isFullyDone && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:grid md:grid-cols-2">
                 {level.workouts.map((w, i) => {
                   const isNext = i === nextIndex;
                   const blocked = isNext && !dailyLimitAllowed;

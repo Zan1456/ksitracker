@@ -1,9 +1,28 @@
 import { ReactNode } from "react";
+import { Sidebar } from "@/components/sidebar";
+import { cn } from "@/lib/cn";
+import type { NavVariant } from "@/lib/nav-items";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export { BrandMark } from "@/components/brand-mark";
+
+/**
+ * On mobile this is just the familiar single "phone card" column. At `md+`
+ * it grows into a real desktop layout: a persistent sidebar rail (when `nav`
+ * is given) plus a wider content column, instead of the phone card sitting
+ * letterboxed in the middle of the screen.
+ */
+export function AppShell({ children, nav }: { children: ReactNode; nav?: NavVariant }) {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col border-border md:border-x">
-      {children}
+    <div className="flex min-h-screen w-full justify-center">
+      {nav && <Sidebar variant={nav} />}
+      <div
+        className={cn(
+          "flex w-full max-w-[520px] flex-1 flex-col border-border md:max-w-[640px]",
+          nav ? "md:border-r" : "md:border-x"
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -24,15 +43,6 @@ export function AppHeader({
         <h1 className="text-[17px] font-medium tracking-[-0.02em]">{title}</h1>
       </div>
       {right}
-    </div>
-  );
-}
-
-export function BrandMark() {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-3.5 w-3.5 rotate-45 rounded-[3px] bg-text" />
-      <span className="text-[15px] font-semibold tracking-[-0.01em]">Repline</span>
     </div>
   );
 }

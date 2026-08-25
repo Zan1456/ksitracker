@@ -21,7 +21,7 @@ export default async function AdminPlansPage() {
   ]);
 
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <AppHeader
         title="Edzéstervek"
         right={

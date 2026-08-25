@@ -20,11 +20,11 @@ export default async function AdminStatsPage() {
   ];
 
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <AppHeader title="Statisztika" />
 
       <PageTransition className="gap-2.5 overflow-y-auto px-5 py-4">
-        <StaggerContainer className="grid grid-cols-2 gap-2.5">
+        <StaggerContainer className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
           {tiles.map((t) => (
             <StaggerItem key={t.label} className="rounded-[10px] border border-border p-3.5">
               <div className="mono mb-2 text-[10px] text-text-faint">{t.label}</div>

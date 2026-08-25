@@ -4,30 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
-import { IconDumbbell, IconTrophy, IconUser, IconUsers, IconClipboard, IconChart } from "./icons";
-import { ComponentType, SVGProps } from "react";
+import { navItems, type NavVariant } from "@/lib/nav-items";
 
-type Item = { href: string; label: string; icon: ComponentType<SVGProps<SVGSVGElement>>; exact?: boolean };
-
-const userItems: Item[] = [
-  { href: "/", label: "Edzések", icon: IconDumbbell, exact: true },
-  { href: "/leaderboard", label: "Ranglista", icon: IconTrophy },
-  { href: "/profile", label: "Profil", icon: IconUser },
-];
-
-const adminItems: Item[] = [
-  { href: "/admin", label: "Felhasználók", icon: IconUsers, exact: true },
-  { href: "/admin/plans", label: "Edzéstervek", icon: IconClipboard },
-  { href: "/admin/stats", label: "Statisztika", icon: IconChart },
-];
-
-export function BottomNav({ variant = "user" }: { variant?: "user" | "admin" }) {
+export function BottomNav({ variant = "user" }: { variant?: NavVariant }) {
   const pathname = usePathname();
-  const items = variant === "admin" ? adminItems : userItems;
+  const items = navItems[variant];
   const layoutGroup = variant === "admin" ? "admin-nav" : "user-nav";
 
   return (
-    <nav className="glass sticky bottom-0 z-10 mt-auto flex border-t">
+    <nav className="glass sticky bottom-0 z-10 mt-auto flex border-t md:hidden">
       {items.map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;

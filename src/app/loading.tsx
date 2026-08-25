@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function HomeLoading() {
   return (
-    <AppShell>
+    <AppShell nav="user">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <BrandMark />
         <div className="flex items-center gap-2.25">

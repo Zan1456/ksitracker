@@ -32,7 +32,7 @@ export default async function WorkoutOverviewPage({
   const isCurrentInProgress = limit.inProgressWorkoutId === id;
 
   return (
-    <AppShell>
+    <AppShell nav="user">
       <div className="glass sticky top-0 z-10 flex items-center gap-3 border-b px-5 py-3.5">
         <Link
           href="/"

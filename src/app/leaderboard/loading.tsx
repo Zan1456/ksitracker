@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function LeaderboardLoading() {
   return (
-    <AppShell>
+    <AppShell nav="user">
       <div className="border-b border-border px-5 pb-3.5 pt-4">
         <Skeleton className="mb-3.5 h-7 w-32" />
         <Skeleton className="h-[54px] w-full rounded-[9px]" />

@@ -29,7 +29,7 @@ export default async function HomePage() {
   const firstName = (user.name ?? "?").trim().split(/\s+/)[0];
 
   return (
-    <AppShell>
+    <AppShell nav="user">
       <div className="glass sticky top-0 z-10 flex items-center justify-between border-b px-5 py-3.5">
         <BrandMark />
         <div className="flex items-center gap-2.25">

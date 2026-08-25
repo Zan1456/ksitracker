@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function AdminUserLoading() {
   return (
-    <AppShell>
+    <AppShell nav="admin">
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Skeleton className="h-[30px] w-[30px] rounded-lg" />
         <Skeleton className="h-4 w-28" />
