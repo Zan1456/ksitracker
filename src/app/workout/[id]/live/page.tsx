@@ -38,7 +38,6 @@ export default async function WorkoutLivePage({ params }: { params: Promise<{ id
     <FocusSession
       sessionId={session.id}
       workoutName={data.workout.name}
-      startedAt={session.startedAt.toISOString()}
       tasks={data.tasks.map((t) => ({
         id: t.id,
         name: t.name,

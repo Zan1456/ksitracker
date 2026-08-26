@@ -357,13 +357,11 @@ export function FocusSession({
   workoutName,
   tasks,
   completedTaskIds,
-  startedAt,
 }: {
   sessionId: string;
   workoutName: string;
   tasks: LiveTask[];
   completedTaskIds: string[];
-  startedAt: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -376,13 +374,17 @@ export function FocusSession({
   const [index, setIndex] = useState(initialIndex);
   const task = tasks[index] as LiveTask | undefined;
 
-  const [elapsedTotalMs, setElapsedTotalMs] = useState(() => Date.now() - new Date(startedAt).getTime());
+  // Always starts counting from 0 at mount — a resumed/stale in-progress
+  // session's real `startedAt` can be far in the past, which used to make
+  // this show a wildly inflated elapsed time on load.
+  const [elapsedTotalMs, setElapsedTotalMs] = useState(0);
   useEffect(() => {
+    const mountedAt = Date.now();
     const interval = setInterval(() => {
-      setElapsedTotalMs(Date.now() - new Date(startedAt).getTime());
+      setElapsedTotalMs(Date.now() - mountedAt);
     }, 1000);
     return () => clearInterval(interval);
-  }, [startedAt]);
+  }, []);
 
   useEffect(() => {
     if (index >= tasks.length) {
