@@ -51,6 +51,7 @@ export default async function WorkoutLivePage({ params }: { params: Promise<{ id
         rankDirection: t.rankDirection,
         rounds: t.rounds,
         restSeconds: t.restSeconds,
+        roundsConfig: t.roundsConfig,
       }))}
       completedTaskIds={completedTaskIds}
     />

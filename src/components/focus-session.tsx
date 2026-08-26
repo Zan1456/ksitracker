@@ -126,13 +126,16 @@ function TaskRunner({
 }) {
   const hasRing = task.type !== "reps" && !(task.type === "stopwatch" && task.resultKind === "time");
   const isTimedRound = task.type === "time" || (task.type === "stopwatch" && task.resultKind === "reps");
-  const fullDurationMs =
-    task.type === "time" ? (task.targetSeconds ?? 0) * 1000 : task.resultKind === "reps" ? 60_000 : 0;
+  // A task with a custom per-round schedule can have a different work
+  // duration/rep count in every round, so this is a function of the round
+  // rather than a single constant.
+  const durationMsFor = (r: number) =>
+    task.type === "time" ? workForRound(task, r) * 1000 : task.resultKind === "reps" ? 60_000 : 0;
 
   const [round, setRound] = useState(1);
   const [phase, setPhase] = useState<"active" | "resting" | "awaiting-input">("active");
   const [running, setRunning] = useState(isTimedRound);
-  const [remainingMs, setRemainingMs] = useState(fullDurationMs);
+  const [remainingMs, setRemainingMs] = useState(() => durationMsFor(1));
   const [repsInput, setRepsInput] = useState("");
 
   const [swPhase, setSwPhase] = useState<"idle" | "running" | "stopped">("idle");
@@ -140,20 +143,21 @@ function TaskRunner({
 
   const advanceAfterRound = () => {
     if (round < task.rounds) {
-      if (task.restSeconds) {
+      const rest = restAfterRound(task, round);
+      if (rest) {
         setPhase("resting");
         setRunning(true);
-        setRemainingMs(task.restSeconds * 1000);
+        setRemainingMs(rest * 1000);
       } else {
         setRound((r) => r + 1);
-        setRemainingMs(fullDurationMs);
+        setRemainingMs(durationMsFor(round + 1));
         setRunning(isTimedRound);
       }
     } else if (task.type === "stopwatch" && task.resultKind === "reps") {
       setRunning(false);
       setPhase("awaiting-input");
     } else {
-      onComplete(task.type === "reps" ? { resultReps: task.targetReps ?? undefined } : {});
+      onComplete(task.type === "reps" ? { resultReps: workForRound(task, round) || undefined } : {});
     }
   };
 
@@ -170,7 +174,7 @@ function TaskRunner({
         if (phase === "resting") {
           setRound((r) => r + 1);
           setPhase("active");
-          setRemainingMs(fullDurationMs);
+          setRemainingMs(durationMsFor(round + 1));
           setRunning(isTimedRound);
         } else {
           advanceAfterRound();
@@ -198,7 +202,7 @@ function TaskRunner({
     if (phase === "resting") {
       setRound((r) => r + 1);
       setPhase("active");
-      setRemainingMs(fullDurationMs);
+      setRemainingMs(durationMsFor(round + 1));
       setRunning(isTimedRound);
     } else {
       setRunning(false);
@@ -208,24 +212,25 @@ function TaskRunner({
 
   // ---- Rest interstitial (mockup 2e) ----
   if (phase === "resting") {
+    const restSeconds = restAfterRound(task, round) ?? 1;
     const nextTaskLabel = task.rounds > 1 ? `KÖVETKEZIK · ${round + 1}. KÖR` : "KÖVETKEZIK";
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4.5 px-6 py-6 text-center">
         <div className="mono text-[11px] tracking-[0.04em] text-success">PIHENŐ</div>
         <div className="relative h-[236px] w-[236px]">
-          <Ring fraction={1 - remainingMs / ((task.restSeconds ?? 1) * 1000)} color="#4ea36a" />
+          <Ring fraction={1 - remainingMs / (restSeconds * 1000)} color="#4ea36a" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em] text-[#8fe0ab]">
               {formatCountdown(remainingMs)}
             </div>
-            <div className="mono text-[11px] text-text-faint">{task.restSeconds} MP SZÜNET</div>
+            <div className="mono text-[11px] text-text-faint">{restSeconds} MP SZÜNET</div>
           </div>
         </div>
         <div className="text-center">
           <div className="mono mb-2 text-[11px] text-text-faint">{nextTaskLabel}</div>
           <div className="mb-2 text-[20px] font-medium tracking-[-0.02em]">
             {task.name}
-            {task.type === "reps" && task.targetReps ? ` · ${task.targetReps} db` : ""}
+            {task.type === "reps" ? ` · ${workForRound(task, round + 1)} db` : ""}
           </div>
           <RoundPips round={round + 1} rounds={task.rounds} color="#4ea36a" />
         </div>
@@ -282,14 +287,14 @@ function TaskRunner({
 
       {hasRing && (
         <div className="relative h-[236px] w-[236px]">
-          <Ring fraction={fullDurationMs ? 1 - remainingMs / fullDurationMs : 0} color="#e0b341" />
+          <Ring fraction={durationMsFor(round) ? 1 - remainingMs / durationMsFor(round) : 0} color="#e0b341" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
               {formatCountdown(remainingMs)}
             </div>
             <div className="mono text-[11px] text-text-faint">
               {task.type === "time"
-                ? `${formatSeconds(task.targetSeconds ?? 0)}-BÓL`
+                ? `${formatSeconds(workForRound(task, round))}-BÓL`
                 : "60 MP-BŐL"}
             </div>
           </div>
@@ -298,7 +303,9 @@ function TaskRunner({
 
       {task.type === "reps" && (
         <div className="mono text-[72px] font-light leading-none tracking-[-0.03em]">
-          {task.perSide ? `${task.targetReps}+${task.targetReps}` : task.targetReps}
+          {task.perSide
+            ? `${workForRound(task, round)}+${workForRound(task, round)}`
+            : workForRound(task, round)}
         </div>
       )}
 
@@ -321,7 +328,7 @@ function TaskRunner({
       {task.type === "time" || (task.type === "stopwatch" && task.resultKind === "reps") ? (
         <div className="flex w-full gap-2.5">
           <button
-            onClick={() => setRemainingMs(fullDurationMs)}
+            onClick={() => setRemainingMs(durationMsFor(round))}
             className="w-[52px] flex-none rounded-[9px] border border-border-strong bg-transparent text-[13px] font-medium text-text-secondary"
           >
             ↺
