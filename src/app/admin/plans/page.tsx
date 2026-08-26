@@ -25,12 +25,20 @@ export default async function AdminPlansPage() {
       <AppHeader
         title="Edzéstervek"
         right={
-          <Link
-            href="/admin/plans/levels/new"
-            className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
-          >
-            + Új szint
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/plans/challenge"
+              className="rounded-[7px] border border-border-strong px-2.75 py-2 text-[11.5px] font-medium text-text-secondary transition-transform active:scale-95"
+            >
+              Challenge
+            </Link>
+            <Link
+              href="/admin/plans/levels/new"
+              className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
+            >
+              + Új szint
+            </Link>
+          </div>
         }
       />
 
