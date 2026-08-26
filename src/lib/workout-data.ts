@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { levels, workouts, workoutTasks, workoutSessions, users } from "@/db/schema";
 import { todayIso } from "./format";
+import { getPassedChallengeLevelIds } from "./challenge-data";
 
 export type TaskDTO = typeof workoutTasks.$inferSelect;
 export type WorkoutDTO = typeof workouts.$inferSelect;
@@ -22,6 +23,8 @@ export type LevelWithProgress = LevelDTO & {
   doneCount: number;
   totalCount: number;
   locked: boolean;
+  /** Whether the user has passed the end-of-level challenge for this level. */
+  challengePassed: boolean;
 };
 
 /**
@@ -39,13 +42,14 @@ const getCompletedSessions = cache(async (userId: string) => {
 });
 
 export async function getLevelsWithProgress(userId: string): Promise<LevelWithProgress[]> {
-  // These four reads are independent, so fire them together instead of
-  // waiting on each Neon HTTP round-trip in turn.
-  const [allLevels, allWorkouts, allTasks, completed] = await Promise.all([
+  // These reads are independent, so fire them together instead of waiting on
+  // each Neon HTTP round-trip in turn.
+  const [allLevels, allWorkouts, allTasks, completed, passedChallengeLevelIds] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.order)),
     db.select().from(workouts).orderBy(asc(workouts.order)),
     db.select({ workoutId: workoutTasks.workoutId, id: workoutTasks.id }).from(workoutTasks),
     getCompletedSessions(userId),
+    getPassedChallengeLevelIds(userId),
   ]);
   const taskCountByWorkout = new Map<string, number>();
   for (const t of allTasks) {
@@ -84,6 +88,7 @@ export async function getLevelsWithProgress(userId: string): Promise<LevelWithPr
       };
     });
     const doneCount = withStatus.filter((w) => w.done).length;
+    const challengePassed = passedChallengeLevelIds.has(level.id);
 
     result.push({
       ...level,
@@ -91,9 +96,12 @@ export async function getLevelsWithProgress(userId: string): Promise<LevelWithPr
       doneCount,
       totalCount: withStatus.length,
       locked: !previousLevelDone,
+      challengePassed,
     });
 
-    previousLevelDone = doneCount === withStatus.length && withStatus.length > 0;
+    // The next level only unlocks once every workout in this one is done AND
+    // the shared end-of-level challenge has been passed.
+    previousLevelDone = doneCount === withStatus.length && withStatus.length > 0 && challengePassed;
   }
 
   return result;
@@ -101,7 +109,9 @@ export async function getLevelsWithProgress(userId: string): Promise<LevelWithPr
 
 /** The level the user is currently working through (first unlocked, not-fully-done level; falls back to the last level once everything is done). */
 export function getCurrentLevelIndex(levelsProgress: LevelWithProgress[]): number {
-  const current = levelsProgress.find((l) => !l.locked && l.doneCount < l.totalCount);
+  const current = levelsProgress.find(
+    (l) => !l.locked && (l.doneCount < l.totalCount || !l.challengePassed)
+  );
   if (current) return current.index;
   return levelsProgress[levelsProgress.length - 1]?.index ?? 1;
 }

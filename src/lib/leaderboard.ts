@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { and, asc, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
-import { taskResults, workoutTasks, users, workoutSessions } from "@/db/schema";
+import { challengeTasks, challengeTaskResults, challengeSessions, users } from "@/db/schema";
 
 export type LeaderboardScope = "week" | "alltime";
 
@@ -22,25 +22,19 @@ export type LeaderboardRow = {
  * `getLeaderboard` and `getPersonalTrend` both look this up internally, and
  * the leaderboard page also calls it directly — `cache()` collapses all of
  * those into a single query per request instead of one each.
+ *
+ * Every challenge task is its own leaderboard category (the challenge list
+ * is global, so there's no per-workout duplication to dedupe anymore).
  */
 export const getLeaderboardCategories = cache(async (): Promise<LeaderboardCategory[]> => {
-  const rows = await db
+  return db
     .select({
-      name: workoutTasks.name,
-      rankDirection: workoutTasks.rankDirection,
-      resultKind: workoutTasks.resultKind,
+      name: challengeTasks.name,
+      rankDirection: challengeTasks.rankDirection,
+      resultKind: challengeTasks.resultKind,
     })
-    .from(workoutTasks)
-    .where(eq(workoutTasks.type, "stopwatch"));
-
-  const byName = new Map<string, LeaderboardCategory>();
-  for (const r of rows) {
-    if (!r.rankDirection || !r.resultKind) continue;
-    if (!byName.has(r.name)) {
-      byName.set(r.name, { name: r.name, rankDirection: r.rankDirection, resultKind: r.resultKind });
-    }
-  }
-  return Array.from(byName.values());
+    .from(challengeTasks)
+    .orderBy(asc(challengeTasks.order));
 });
 
 function mondayOfCurrentWeekIso(): string {
@@ -67,19 +61,18 @@ export async function getLeaderboard(
     .select({
       userId: users.id,
       userName: users.name,
-      resultMs: taskResults.resultMs,
-      resultReps: taskResults.resultReps,
+      resultMs: challengeTaskResults.resultMs,
+      resultReps: challengeTaskResults.resultReps,
     })
-    .from(taskResults)
-    .innerJoin(workoutTasks, eq(taskResults.taskId, workoutTasks.id))
-    .innerJoin(workoutSessions, eq(taskResults.sessionId, workoutSessions.id))
-    .innerJoin(users, eq(workoutSessions.userId, users.id))
+    .from(challengeTaskResults)
+    .innerJoin(challengeTasks, eq(challengeTaskResults.taskId, challengeTasks.id))
+    .innerJoin(challengeSessions, eq(challengeTaskResults.sessionId, challengeSessions.id))
+    .innerJoin(users, eq(challengeSessions.userId, users.id))
     .where(
       and(
-        eq(workoutTasks.name, categoryName),
-        eq(workoutTasks.type, "stopwatch"),
-        eq(taskResults.completed, true),
-        scope === "week" ? gte(workoutSessions.sessionDate, mondayOfCurrentWeekIso()) : undefined
+        eq(challengeTasks.name, categoryName),
+        eq(challengeTaskResults.completed, true),
+        scope === "week" ? gte(challengeSessions.sessionDate, mondayOfCurrentWeekIso()) : undefined
       )
     );
 
@@ -120,23 +113,22 @@ export async function getPersonalTrend(
 
   const results = await db
     .select({
-      resultMs: taskResults.resultMs,
-      resultReps: taskResults.resultReps,
-      completedAt: taskResults.completedAt,
-      sessionDate: workoutSessions.sessionDate,
+      resultMs: challengeTaskResults.resultMs,
+      resultReps: challengeTaskResults.resultReps,
+      completedAt: challengeTaskResults.completedAt,
+      sessionDate: challengeSessions.sessionDate,
     })
-    .from(taskResults)
-    .innerJoin(workoutTasks, eq(taskResults.taskId, workoutTasks.id))
-    .innerJoin(workoutSessions, eq(taskResults.sessionId, workoutSessions.id))
+    .from(challengeTaskResults)
+    .innerJoin(challengeTasks, eq(challengeTaskResults.taskId, challengeTasks.id))
+    .innerJoin(challengeSessions, eq(challengeTaskResults.sessionId, challengeSessions.id))
     .where(
       and(
-        eq(workoutSessions.userId, userId),
-        eq(workoutTasks.name, categoryName),
-        eq(workoutTasks.type, "stopwatch"),
-        eq(taskResults.completed, true)
+        eq(challengeSessions.userId, userId),
+        eq(challengeTasks.name, categoryName),
+        eq(challengeTaskResults.completed, true)
       )
     )
-    .orderBy(asc(taskResults.completedAt));
+    .orderBy(asc(challengeTaskResults.completedAt));
 
   const points: TrendPoint[] = results
     .map((r) => ({
