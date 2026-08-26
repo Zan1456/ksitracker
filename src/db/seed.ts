@@ -1,6 +1,6 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { levels, workouts, workoutTasks, challengeTasks, challengeSettings, users, type RoundConfig } from "./schema";
 
@@ -233,7 +233,7 @@ async function main() {
   console.log("Seeding levels, workouts and tasks…");
 
   for (const levelSeed of data) {
-    const [level] = await db
+    let [level] = await db
       .insert(levels)
       .values({
         index: levelSeed.index,
@@ -241,15 +241,18 @@ async function main() {
         description: levelSeed.description,
         order: levelSeed.index,
       })
-      .onConflictDoUpdate({
-        target: levels.index,
-        set: { name: levelSeed.name, description: levelSeed.description, order: levelSeed.index },
-      })
+      .onConflictDoNothing({ target: levels.index })
       .returning();
+
+    // Row already existed (conflict) — fetch it instead of overwriting
+    // whatever an admin may have edited since the last seed.
+    if (!level) {
+      [level] = await db.select().from(levels).where(eq(levels.index, levelSeed.index)).limit(1);
+    }
 
     for (let wi = 0; wi < levelSeed.workouts.length; wi++) {
       const workoutSeed = levelSeed.workouts[wi];
-      const [workout] = await db
+      let [workout] = await db
         .insert(workouts)
         .values({
           levelId: level.id,
@@ -259,16 +262,16 @@ async function main() {
           order: wi,
           estimatedMinutes: workoutSeed.estimatedMinutes,
         })
-        .onConflictDoUpdate({
-          target: [workouts.levelId, workouts.order],
-          set: {
-            name: workoutSeed.name,
-            description: workoutSeed.description,
-            difficulty: workoutSeed.difficulty,
-            estimatedMinutes: workoutSeed.estimatedMinutes,
-          },
-        })
+        .onConflictDoNothing({ target: [workouts.levelId, workouts.order] })
         .returning();
+
+      if (!workout) {
+        [workout] = await db
+          .select()
+          .from(workouts)
+          .where(and(eq(workouts.levelId, level.id), eq(workouts.order, wi)))
+          .limit(1);
+      }
 
       for (let ti = 0; ti < workoutSeed.tasks.length; ti++) {
         const t = workoutSeed.tasks[ti];
@@ -288,10 +291,7 @@ async function main() {
         await db
           .insert(workoutTasks)
           .values(values)
-          .onConflictDoUpdate({
-            target: [workoutTasks.workoutId, workoutTasks.order],
-            set: values,
-          });
+          .onConflictDoNothing({ target: [workoutTasks.workoutId, workoutTasks.order] });
       }
     }
   }
@@ -310,16 +310,13 @@ async function main() {
     await db
       .insert(challengeTasks)
       .values(values)
-      .onConflictDoUpdate({ target: challengeTasks.order, set: values });
+      .onConflictDoNothing({ target: challengeTasks.order });
   }
 
+  // Only create the settings row if it doesn't exist yet — an admin may
+  // have changed `minRequired` since the last seed run.
   const [existingSettings] = await db.select().from(challengeSettings).limit(1);
-  if (existingSettings) {
-    await db
-      .update(challengeSettings)
-      .set({ minRequired: challengeMinRequired })
-      .where(eq(challengeSettings.id, existingSettings.id));
-  } else {
+  if (!existingSettings) {
     await db.insert(challengeSettings).values({ minRequired: challengeMinRequired });
   }
 
