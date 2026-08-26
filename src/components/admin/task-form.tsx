@@ -7,7 +7,19 @@ import { toast } from "@/lib/toast-store";
 import { createTaskAction, updateTaskAction } from "@/app/admin/plans/actions";
 import type { WorkoutTask } from "@/db/schema";
 
-type TaskType = "reps" | "time" | "stopwatch";
+type TaskType = "reps" | "time";
+
+/** One row of the custom per-round work/rest editor. */
+type RoundRow = { work: number; rest: string };
+
+function buildInitialRoundRows(task: WorkoutTask | undefined, type: TaskType, rounds: number): RoundRow[] {
+  if (task?.roundsConfig?.length) {
+    return task.roundsConfig.map((r) => ({ work: r.work, rest: r.restSeconds != null ? String(r.restSeconds) : "" }));
+  }
+  const fallbackWork = type === "time" ? task?.targetSeconds ?? 30 : task?.targetReps ?? 10;
+  const fallbackRest = task?.restSeconds ? String(task.restSeconds) : "";
+  return Array.from({ length: Math.max(rounds, 1) }, () => ({ work: fallbackWork, rest: fallbackRest }));
+}
 
 export function TaskForm({
   task,
@@ -20,8 +32,10 @@ export function TaskForm({
 }) {
   const action = task ? updateTaskAction : createTaskAction.bind(null, workoutId!);
   const [state, formAction, pending] = useActionState(action, undefined);
-  const [type, setType] = useState<TaskType>(task?.type ?? "reps");
+  const [type, setType] = useState<TaskType>((task?.type as TaskType) ?? "reps");
   const [rounds, setRounds] = useState(task?.rounds ?? 1);
+  const [customRounds, setCustomRounds] = useState(!!task?.roundsConfig?.length);
+  const [roundRows, setRoundRows] = useState<RoundRow[]>(() => buildInitialRoundRows(task, type, rounds));
 
   useEffect(() => {
     if (state?.success) {
@@ -30,6 +44,22 @@ export function TaskForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  // Keep the per-round rows in sync with the round count without clobbering
+  // values the admin already typed for the rows that still exist.
+  useEffect(() => {
+    setRoundRows((prev) => {
+      if (prev.length === rounds) return prev;
+      const next = prev.slice(0, rounds);
+      const last = prev[prev.length - 1];
+      while (next.length < rounds) next.push(last ? { ...last } : { work: 10, rest: "" });
+      return next;
+    });
+  }, [rounds]);
+
+  function updateRoundRow(i: number, patch: Partial<RoundRow>) {
+    setRoundRows((prev) => prev.map((row, ri) => (ri === i ? { ...row, ...patch } : row)));
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
@@ -50,7 +80,6 @@ export function TaskForm({
           >
             <option value="reps">Ismétlés</option>
             <option value="time">Idő</option>
-            <option value="stopwatch">Stopper (ranglistás)</option>
           </select>
         </label>
       </div>
@@ -120,7 +149,50 @@ export function TaskForm({
         </div>
       )}
 
-      {(type === "reps" || type === "time") && rounds > 1 && (
+      {rounds > 1 && (
+        <label className="flex items-center gap-1.75 text-[12.5px] text-text-secondary">
+          <input
+            type="checkbox"
+            name="customRounds"
+            checked={customRounds}
+            onChange={(e) => setCustomRounds(e.target.checked)}
+          />
+          Egyedi körök — köröként eltérő {type === "time" ? "idő" : "ismétlés"}/pihenő arány (pl. 30-30, majd 35-25)
+        </label>
+      )}
+
+      {rounds > 1 && customRounds && (
+        <div className="flex flex-col gap-1.75 rounded-lg border border-border-strong bg-bg-inset p-2.5">
+          {roundRows.map((row, i) => (
+            <div key={i} className="flex items-center gap-1.75">
+              <span className="mono w-5 shrink-0 text-[11px] text-text-faint">{i + 1}.</span>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-[10.5px] text-text-faint">{type === "time" ? "Idő (mp)" : "Ism."}</span>
+                <Input
+                  name="roundWork"
+                  type="number"
+                  min={1}
+                  value={row.work}
+                  onChange={(e) => updateRoundRow(i, { work: Number(e.target.value) || 1 })}
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-[10.5px] text-text-faint">Pihenő ez után (mp)</span>
+                <Input
+                  name="roundRest"
+                  type="number"
+                  min={0}
+                  placeholder="nincs"
+                  value={row.rest}
+                  onChange={(e) => updateRoundRow(i, { rest: e.target.value })}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {rounds > 1 && !customRounds && (
         <label className="flex flex-col gap-1.5">
           <Label>Pihenő körök között (mp) — üresen hagyva nincs pihenő</Label>
           <Input
@@ -128,53 +200,9 @@ export function TaskForm({
             type="number"
             min={1}
             max={600}
-            defaultValue={task?.restSeconds ?? ""}
+            defaultValue={task?.roundsConfig?.length ? "" : task?.restSeconds ?? ""}
           />
         </label>
-      )}
-
-      {type === "stopwatch" && (
-        <>
-          <p className="rounded-lg border border-border-strong bg-bg-inset px-3 py-2.5 text-[12px] leading-[1.5] text-text-muted">
-            A stopperes feladatok automatikusan bekerülnek a ranglistába. Válaszd ki, hogy a
-            felhasználók egy elért <strong className="text-text-secondary">időt</strong>, vagy egy{" "}
-            <strong className="text-text-secondary">ismétlésszámot</strong> rögzítsenek, és hogy melyik
-            eredmény számít jobbnak.
-          </p>
-          <div className="flex gap-2.5">
-            <label className="flex flex-1 flex-col gap-1.5">
-              <Label>Táv (m) — opcionális</Label>
-              <Input
-                name="targetDistanceMeters"
-                type="number"
-                min={1}
-                defaultValue={task?.targetDistanceMeters ?? ""}
-              />
-            </label>
-            <label className="flex flex-1 flex-col gap-1.5">
-              <Label>Eredmény típusa</Label>
-              <select
-                name="resultKind"
-                defaultValue={task?.resultKind ?? "time"}
-                className="box-border w-full rounded-lg border border-border-strong bg-bg-inset px-3 py-3.5 text-sm text-text outline-none"
-              >
-                <option value="time">Idő</option>
-                <option value="reps">Ismétlésszám</option>
-              </select>
-            </label>
-          </div>
-          <label className="flex flex-col gap-1.5">
-            <Label>Rangsorolás</Label>
-            <select
-              name="rankDirection"
-              defaultValue={task?.rankDirection ?? "asc"}
-              className="box-border w-full rounded-lg border border-border-strong bg-bg-inset px-3.5 py-3.5 text-sm text-text outline-none"
-            >
-              <option value="asc">Minél kisebb, annál jobb (pl. sprint idő)</option>
-              <option value="desc">Minél nagyobb, annál jobb (pl. plank idő, ismétlésszám)</option>
-            </select>
-          </label>
-        </>
       )}
 
       {state?.error && <p className="text-[12.5px] text-danger">{state.error}</p>}

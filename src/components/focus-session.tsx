@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast-store";
 import { completeTaskAction, completeSessionAction, abandonSessionAction } from "@/app/workout/actions";
 
+type RoundConfig = { work: number; restSeconds: number | null };
+
 type LiveTask = {
   id: string;
   name: string;
@@ -19,7 +21,23 @@ type LiveTask = {
   rankDirection: "asc" | "desc" | null;
   rounds: number;
   restSeconds: number | null;
+  /** Per-round work/rest overrides (e.g. 30-30, then 35-25) — null for uniform rounds. */
+  roundsConfig: RoundConfig[] | null;
 };
+
+/** This round's work amount — seconds for "time" tasks, rep count for "reps" tasks — honoring a custom per-round schedule when set. */
+function workForRound(t: LiveTask, round: number): number {
+  const custom = t.roundsConfig?.[round - 1]?.work;
+  if (custom != null) return custom;
+  return (t.type === "time" ? t.targetSeconds : t.targetReps) ?? 0;
+}
+
+/** The rest, in seconds, after finishing the given round — null means no rest. */
+function restAfterRound(t: LiveTask, round: number): number | null {
+  const custom = t.roundsConfig?.[round - 1];
+  if (custom) return custom.restSeconds;
+  return t.restSeconds ?? null;
+}
 
 type TaskResult = { resultMs?: number; resultReps?: number };
 
@@ -43,6 +61,10 @@ function formatCountdown(ms: number): string {
 
 /** Compact value shown in the always-visible task list, e.g. "3×20", "12+12", "1:30", "400 m". */
 function footerValue(t: LiveTask): string {
+  if (t.roundsConfig?.length) {
+    const seq = t.roundsConfig.map((r) => r.work).join("/");
+    return t.type === "time" ? `${seq} mp` : seq;
+  }
   if (t.type === "reps") {
     const reps = t.perSide ? `${t.targetReps}+${t.targetReps}` : `${t.targetReps}`;
     return t.rounds > 1 ? `${t.rounds}×${t.targetReps}` : reps;

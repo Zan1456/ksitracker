@@ -84,6 +84,8 @@ export function difficultyLabel(d: "easy" | "medium" | "hard"): string {
   return d === "easy" ? "KÖNNYŰ" : d === "hard" ? "NEHÉZ" : "KÖZEPES";
 }
 
+type RoundConfigLike = { work: number; restSeconds: number | null };
+
 type TaskLike = {
   type: "reps" | "time" | "stopwatch";
   targetReps?: number | null;
@@ -91,15 +93,29 @@ type TaskLike = {
   targetDistanceMeters?: number | null;
   resultKind?: "time" | "reps" | null;
   rounds: number;
+  roundsConfig?: RoundConfigLike[] | null;
 };
+
+/** "30-35-40" style sequence of the per-round work amounts, when customized. */
+function roundWorkSequence(rounds: RoundConfigLike[]): string {
+  return rounds.map((r) => r.work).join("-");
+}
+
+/** "20-15" style sequence of the per-round rest seconds, omitted when nobody has one. */
+function roundRestSequence(rounds: RoundConfigLike[]): string | null {
+  if (!rounds.some((r) => r.restSeconds)) return null;
+  return rounds.map((r) => r.restSeconds ?? 0).join("-");
+}
 
 /** Short mono meta label for a task, e.g. "3×15 ISM", "1:30 TARTÁS", "STOPPER". */
 export function taskMetaLabel(t: TaskLike): string {
   if (t.type === "reps") {
+    if (t.roundsConfig?.length) return `${roundWorkSequence(t.roundsConfig)} ISM`;
     const prefix = t.rounds > 1 ? `${t.rounds}×` : "";
     return `${prefix}${t.targetReps ?? "-"} ISM`;
   }
   if (t.type === "time") {
+    if (t.roundsConfig?.length) return `${roundWorkSequence(t.roundsConfig)} MP TARTÁS`;
     const prefix = t.rounds > 1 ? `${t.rounds} KÖR · ` : "";
     return `${prefix}${formatSeconds(t.targetSeconds ?? 0)} TARTÁS`;
   }
@@ -118,19 +134,27 @@ export type TaskRowDisplay = { subtext: string | null; value: string; amber: boo
 /** Subtext + right-aligned value for the workout-detail task row (mockup 1f). */
 export function taskRowDisplay(t: FullTaskLike): TaskRowDisplay {
   if (t.type === "reps") {
-    const subtext =
-      t.rounds > 1
-        ? `${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`
-        : null;
+    let subtext: string | null = null;
+    if (t.roundsConfig?.length) {
+      const rest = roundRestSequence(t.roundsConfig);
+      subtext = `EGYEDI KÖRÖK · ${roundWorkSequence(t.roundsConfig)} ISM${rest ? ` · ${rest} MP SZÜNET` : ""}`;
+    } else if (t.rounds > 1) {
+      subtext = `${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`;
+    }
     const reps = t.targetReps ?? 0;
     const value = t.perSide ? `${reps}+${reps} db` : `${reps} db`;
     return { subtext, value, amber: false };
   }
   if (t.type === "time") {
-    const subtext =
-      t.rounds > 1
-        ? `IDŐZÍTŐVEL · ${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`
-        : "IDŐZÍTŐVEL";
+    let subtext: string;
+    if (t.roundsConfig?.length) {
+      const rest = roundRestSequence(t.roundsConfig);
+      subtext = `EGYEDI KÖRÖK · ${roundWorkSequence(t.roundsConfig)} MP${rest ? ` · ${rest} MP SZÜNET` : ""}`;
+    } else if (t.rounds > 1) {
+      subtext = `IDŐZÍTŐVEL · ${t.rounds} KÖR${t.restSeconds ? ` · ${t.restSeconds} MP SZÜNET` : ""}`;
+    } else {
+      subtext = "IDŐZÍTŐVEL";
+    }
     return { subtext, value: formatSeconds(t.targetSeconds ?? 0), amber: true };
   }
   // stopwatch — always leaderboard-eligible in this app

@@ -5,7 +5,7 @@ import { asc, desc, eq, gt, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { levels, workouts, workoutTasks } from "@/db/schema";
+import { levels, workouts, workoutTasks, type RoundConfig } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 
 export type PlanFormState = { error?: string; success?: boolean } | undefined;
@@ -198,15 +198,17 @@ const taskSchema = z
   .object({
     name: z.string().trim().min(1, "Adj meg egy nevet."),
     note: z.string().trim().optional(),
-    type: z.enum(["reps", "time", "stopwatch"]),
+    type: z.enum(["reps", "time"]),
     targetReps: z.coerce.number().int().min(1).optional(),
     perSide: z.coerce.boolean().optional(),
     targetSeconds: z.coerce.number().int().min(1).optional(),
-    targetDistanceMeters: z.coerce.number().int().min(1).optional(),
-    rankDirection: z.enum(["asc", "desc"]).optional(),
-    resultKind: z.enum(["time", "reps"]).optional(),
     rounds: z.coerce.number().int().min(1).max(20).default(1),
     restSeconds: z.coerce.number().int().min(1).max(600).optional(),
+    // Per-round work/rest schedule (e.g. round 1 = 30s work/30s rest, round
+    // 2 = 35s work/25s rest) — overrides the uniform target/rest above.
+    customRounds: z.coerce.boolean().optional(),
+    roundWork: z.array(z.coerce.number().int().min(1)).optional().default([]),
+    roundRest: z.array(z.string()).optional().default([]),
   })
   .refine((v) => v.type !== "reps" || !!v.targetReps, {
     message: "Add meg az ismétlésszámot.",
@@ -216,13 +218,9 @@ const taskSchema = z
     message: "Add meg az időtartamot (mp).",
     path: ["targetSeconds"],
   })
-  .refine((v) => v.type !== "stopwatch" || !!v.rankDirection, {
-    message: "Válaszd ki a rangsorolás irányát.",
-    path: ["rankDirection"],
-  })
-  .refine((v) => v.type !== "stopwatch" || !!v.resultKind, {
-    message: "Válaszd ki az eredmény típusát.",
-    path: ["resultKind"],
+  .refine((v) => !v.customRounds || v.rounds <= 1 || v.roundWork.length === v.rounds, {
+    message: "Add meg minden körhöz az értéket.",
+    path: ["roundWork"],
   });
 
 function taskFormToValues(formData: FormData) {
@@ -233,28 +231,37 @@ function taskFormToValues(formData: FormData) {
     targetReps: formData.get("targetReps") || undefined,
     perSide: formData.get("perSide") === "on",
     targetSeconds: formData.get("targetSeconds") || undefined,
-    targetDistanceMeters: formData.get("targetDistanceMeters") || undefined,
-    rankDirection: formData.get("rankDirection") || undefined,
-    resultKind: formData.get("resultKind") || undefined,
     rounds: formData.get("rounds") || 1,
     restSeconds: formData.get("restSeconds") || undefined,
+    customRounds: formData.get("customRounds") === "on",
+    roundWork: formData.getAll("roundWork"),
+    roundRest: formData.getAll("roundRest"),
   };
 }
 
 /** Null out the fields that don't apply to the selected task type. */
 function normalizeTaskValues(v: z.infer<typeof taskSchema>) {
+  const useCustomRounds = !!v.customRounds && v.rounds > 1 && v.roundWork.length === v.rounds;
+  const roundsConfig: RoundConfig[] | null = useCustomRounds
+    ? v.roundWork.map((work, i) => ({
+        work,
+        restSeconds: v.roundRest[i] ? Number(v.roundRest[i]) : null,
+      }))
+    : null;
+
   return {
     name: v.name,
     note: v.note || null,
     type: v.type,
-    targetReps: v.type === "reps" ? v.targetReps ?? null : null,
+    targetReps: v.type === "reps" ? (roundsConfig ? roundsConfig[0].work : v.targetReps ?? null) : null,
     perSide: v.type === "reps" ? !!v.perSide : false,
-    targetSeconds: v.type === "time" ? v.targetSeconds ?? null : null,
-    targetDistanceMeters: v.type === "stopwatch" ? v.targetDistanceMeters ?? null : null,
-    rankDirection: v.type === "stopwatch" ? v.rankDirection ?? null : null,
-    resultKind: v.type === "stopwatch" ? v.resultKind ?? null : null,
-    rounds: v.type === "stopwatch" ? 1 : v.rounds,
-    restSeconds: v.type !== "stopwatch" && v.rounds > 1 ? v.restSeconds ?? null : null,
+    targetSeconds: v.type === "time" ? (roundsConfig ? roundsConfig[0].work : v.targetSeconds ?? null) : null,
+    targetDistanceMeters: null,
+    rankDirection: null,
+    resultKind: null,
+    rounds: v.rounds,
+    restSeconds: roundsConfig ? roundsConfig[0].restSeconds : v.rounds > 1 ? v.restSeconds ?? null : null,
+    roundsConfig,
   };
 }
 
