@@ -47,15 +47,17 @@ export function TaskForm({
 
   // Keep the per-round rows in sync with the round count without clobbering
   // values the admin already typed for the rows that still exist.
-  useEffect(() => {
+  function handleRoundsChange(value: number) {
+    const nextRounds = Math.max(1, value || 1);
+    setRounds(nextRounds);
     setRoundRows((prev) => {
-      if (prev.length === rounds) return prev;
-      const next = prev.slice(0, rounds);
+      if (prev.length === nextRounds) return prev;
+      const next = prev.slice(0, nextRounds);
       const last = prev[prev.length - 1];
-      while (next.length < rounds) next.push(last ? { ...last } : { work: 10, rest: "" });
+      while (next.length < nextRounds) next.push(last ? { ...last } : { work: 10, rest: "" });
       return next;
     });
-  }, [rounds]);
+  }
 
   function updateRoundRow(i: number, patch: Partial<RoundRow>) {
     setRoundRows((prev) => prev.map((row, ri) => (ri === i ? { ...row, ...patch } : row)));
@@ -113,7 +115,7 @@ export function TaskForm({
               min={1}
               max={20}
               value={rounds}
-              onChange={(e) => setRounds(Number(e.target.value) || 1)}
+              onChange={(e) => handleRoundsChange(Number(e.target.value))}
             />
           </label>
           <label className="mb-3.5 flex items-center gap-1.75 text-[12.5px] text-text-secondary">
@@ -143,7 +145,7 @@ export function TaskForm({
               min={1}
               max={20}
               value={rounds}
-              onChange={(e) => setRounds(Number(e.target.value) || 1)}
+              onChange={(e) => handleRoundsChange(Number(e.target.value))}
             />
           </label>
         </div>

@@ -1,20 +1,27 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { db } from "./index";
-import { levels, workouts, workoutTasks, users } from "./schema";
+import { levels, workouts, workoutTasks, challengeTasks, challengeSettings, users, type RoundConfig } from "./schema";
 
 type TaskSeed = {
   name: string;
   note?: string;
-  type: "reps" | "time" | "stopwatch";
+  type: "reps" | "time";
   targetReps?: number;
   perSide?: boolean;
   targetSeconds?: number;
-  targetDistanceMeters?: number;
-  rankDirection?: "asc" | "desc";
-  resultKind?: "time" | "reps";
   rounds?: number;
   restSeconds?: number;
+  roundsConfig?: RoundConfig[];
+};
+
+type ChallengeTaskSeed = {
+  name: string;
+  note?: string;
+  targetDistanceMeters?: number;
+  rankDirection: "asc" | "desc";
+  resultKind: "time" | "reps";
 };
 
 type WorkoutSeed = {
@@ -68,16 +75,21 @@ const data: LevelSeed[] = [
         difficulty: "easy",
         estimatedMinutes: 20,
         tasks: [
-          { name: "Helyben futás", type: "time", targetSeconds: 60, rounds: 3, restSeconds: 20 },
-          { name: "Jumping jack", type: "reps", targetReps: 20, rounds: 3, restSeconds: 20 },
           {
-            name: "Sprint 400 m",
-            type: "stopwatch",
-            targetDistanceMeters: 400,
-            rankDirection: "asc",
-            resultKind: "time",
-            note: "saját tempó, mérd az időt",
+            name: "Helyben futás",
+            type: "time",
+            targetSeconds: 30,
+            rounds: 3,
+            restSeconds: 30,
+            // Demonstrates a custom per-round work/rest schedule: 30s work/30s
+            // rest, then 35s work/25s rest, then 40s work/20s rest.
+            roundsConfig: [
+              { work: 30, restSeconds: 30 },
+              { work: 35, restSeconds: 25 },
+              { work: 40, restSeconds: 20 },
+            ],
           },
+          { name: "Jumping jack", type: "reps", targetReps: 20, rounds: 3, restSeconds: 20 },
         ],
       },
       {
@@ -88,13 +100,6 @@ const data: LevelSeed[] = [
         tasks: [
           { name: "Felülés", type: "reps", targetReps: 15, rounds: 3, restSeconds: 20 },
           { name: "Oldalsó plank", type: "time", targetSeconds: 25, perSide: true, rounds: 2 },
-          {
-            name: "Plank",
-            type: "stopwatch",
-            rankDirection: "desc",
-            resultKind: "time",
-            note: "tarts ki, ameddig bírod",
-          },
         ],
       },
     ],
@@ -128,13 +133,6 @@ const data: LevelSeed[] = [
           { name: "Kiugrásos kitörés", type: "reps", targetReps: 10, perSide: true, rounds: 3, restSeconds: 20 },
           { name: "Fel-le ugrás guggolásból", type: "reps", targetReps: 15, rounds: 3, restSeconds: 20 },
           { name: "Magas térdemelés", type: "time", targetSeconds: 30, rounds: 3, restSeconds: 15 },
-          {
-            name: "Burpee 1'",
-            type: "stopwatch",
-            rankDirection: "desc",
-            resultKind: "reps",
-            note: "hány burpee 60 mp alatt",
-          },
         ],
       },
       {
@@ -159,13 +157,6 @@ const data: LevelSeed[] = [
           { name: "Guggolás", type: "reps", targetReps: 20, rounds: 3, restSeconds: 30 },
           { name: "Kitörés váltott lábbal", type: "reps", targetReps: 12, perSide: true, rounds: 3 },
           { name: "Fal melletti ülés", type: "time", targetSeconds: 90, note: "90 fokos szög" },
-          {
-            name: "Sprint",
-            type: "stopwatch",
-            targetDistanceMeters: 400,
-            rankDirection: "asc",
-            resultKind: "time",
-          },
         ],
       },
     ],
@@ -194,13 +185,6 @@ const data: LevelSeed[] = [
         estimatedMinutes: 24,
         tasks: [
           { name: "Magas térdemelés", type: "time", targetSeconds: 45, rounds: 4, restSeconds: 20 },
-          {
-            name: "Sprint 400 m",
-            type: "stopwatch",
-            targetDistanceMeters: 400,
-            rankDirection: "asc",
-            resultKind: "time",
-          },
           { name: "Aktív nyújtás", type: "time", targetSeconds: 60 },
         ],
       },
@@ -213,13 +197,6 @@ const data: LevelSeed[] = [
           { name: "Kettlebell swing", type: "reps", targetReps: 20, rounds: 4, restSeconds: 20 },
           { name: "Fekvőtámasz + tapintás", type: "reps", targetReps: 12, rounds: 4, restSeconds: 20 },
           { name: "Farmer's walk", type: "time", targetSeconds: 45, rounds: 3, restSeconds: 20 },
-          {
-            name: "Burpee 1'",
-            type: "stopwatch",
-            rankDirection: "desc",
-            resultKind: "reps",
-            note: "hány burpee 60 mp alatt",
-          },
         ],
       },
       {
@@ -228,13 +205,6 @@ const data: LevelSeed[] = [
         difficulty: "hard",
         estimatedMinutes: 25,
         tasks: [
-          {
-            name: "Plank",
-            type: "stopwatch",
-            rankDirection: "desc",
-            resultKind: "time",
-            note: "tarts ki, ameddig bírod",
-          },
           { name: "Fal melletti ülés", type: "time", targetSeconds: 150, note: "90 fokos szög" },
           { name: "Végső sprint", type: "reps", targetReps: 1, rounds: 1, note: "minden erőddel" },
         ],
@@ -242,6 +212,22 @@ const data: LevelSeed[] = [
     ],
   },
 ];
+
+// The global challenge list — the same tasks reappear at the end of every
+// level. At least `minRequired` of them (not necessarily all) must be
+// completed for the challenge to count as passed.
+const challengeTasksSeed: ChallengeTaskSeed[] = [
+  {
+    name: "Sprint 400 m",
+    note: "saját tempó, mérd az időt",
+    targetDistanceMeters: 400,
+    rankDirection: "asc",
+    resultKind: "time",
+  },
+  { name: "Plank", note: "tarts ki, ameddig bírod", rankDirection: "desc", resultKind: "time" },
+  { name: "Burpee 1'", note: "hány burpee 60 mp alatt", rankDirection: "desc", resultKind: "reps" },
+];
+const challengeMinRequired = 2;
 
 async function main() {
   console.log("Seeding levels, workouts and tasks…");
@@ -295,11 +281,9 @@ async function main() {
           targetReps: t.targetReps,
           perSide: t.perSide ?? false,
           targetSeconds: t.targetSeconds,
-          targetDistanceMeters: t.targetDistanceMeters,
-          rankDirection: t.rankDirection,
-          resultKind: t.resultKind,
           rounds: t.rounds ?? 1,
           restSeconds: t.restSeconds,
+          roundsConfig: t.roundsConfig,
         };
         await db
           .insert(workoutTasks)
@@ -310,6 +294,33 @@ async function main() {
           });
       }
     }
+  }
+
+  console.log("Seeding challenge tasks…");
+  for (let ci = 0; ci < challengeTasksSeed.length; ci++) {
+    const c = challengeTasksSeed[ci];
+    const values = {
+      order: ci,
+      name: c.name,
+      note: c.note,
+      targetDistanceMeters: c.targetDistanceMeters,
+      rankDirection: c.rankDirection,
+      resultKind: c.resultKind,
+    };
+    await db
+      .insert(challengeTasks)
+      .values(values)
+      .onConflictDoUpdate({ target: challengeTasks.order, set: values });
+  }
+
+  const [existingSettings] = await db.select().from(challengeSettings).limit(1);
+  if (existingSettings) {
+    await db
+      .update(challengeSettings)
+      .set({ minRequired: challengeMinRequired })
+      .where(eq(challengeSettings.id, existingSettings.id));
+  } else {
+    await db.insert(challengeSettings).values({ minRequired: challengeMinRequired });
   }
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@repline.app";
