@@ -6,6 +6,7 @@ import {
   getDailyLimitInfo,
   getCurrentLevelIndex,
 } from "@/lib/workout-data";
+import { getChallengeDailyLimitInfo } from "@/lib/challenge-data";
 import { msUntilNextDay } from "@/lib/format";
 import { AppShell, BrandMark } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
@@ -17,10 +18,11 @@ import { PageTransition } from "@/components/motion/page-transition";
 export default async function HomePage() {
   const user = await requireUser();
 
-  const [levels, streak, limit] = await Promise.all([
+  const [levels, streak, limit, challengeLimit] = await Promise.all([
     getLevelsWithProgress(user.id),
     getStreakDays(user.id),
     getDailyLimitInfo(user.id),
+    getChallengeDailyLimitInfo(user.id),
   ]);
 
   const totalWorkouts = levels.reduce((s, l) => s + l.totalCount, 0);
@@ -53,10 +55,16 @@ export default async function HomePage() {
         </div>
 
         {limit.reason === "already_in_progress" && limit.inProgressWorkoutId && (
-          <InProgressBanner workoutId={limit.inProgressWorkoutId} />
+          <InProgressBanner href={`/workout/${limit.inProgressWorkoutId}/live`} />
         )}
         {limit.reason === "limit_reached" && (
           <DailyLimitCountdownBanner initialMs={msUntilNextDay()} />
+        )}
+        {challengeLimit.reason === "already_in_progress" && challengeLimit.inProgressLevelId && (
+          <InProgressBanner
+            href={`/challenge/${challengeLimit.inProgressLevelId}/live`}
+            label="Folyamatban lévő challenge-próbálkozásod van."
+          />
         )}
 
         <LevelList levels={levels} dailyLimitAllowed={limit.canStartNew} />

@@ -24,16 +24,16 @@ export function DailyLimitCountdownBanner({ initialMs }: { initialMs: number }) 
   );
 }
 
-/** Amber "you have a workout in progress" banner linking back to the live session. */
-export function InProgressBanner({ workoutId }: { workoutId: string }) {
+/** Amber "you have a session in progress" banner linking back to the live session. */
+export function InProgressBanner({ href, label = "Folyamatban lévő edzésed van." }: { href: string; label?: string }) {
   return (
     <Link
-      href={`/workout/${workoutId}/live`}
+      href={href}
       className="flex items-center gap-2.75 rounded-[9px] border border-warning-border bg-warning-bg px-3.25 py-3"
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
       <div className="flex-1 text-[12.5px] leading-[1.4] text-warning">
-        Folyamatban lévő edzésed van. <span className="font-medium text-text">Folytatás →</span>
+        {label} <span className="font-medium text-text">Folytatás →</span>
       </div>
     </Link>
   );

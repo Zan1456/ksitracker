@@ -17,7 +17,8 @@ export function LevelList({
   return (
     <StaggerContainer className="flex flex-col gap-5">
       {levels.map((level) => {
-        const isFullyDone = level.totalCount > 0 && level.doneCount === level.totalCount;
+        const workoutsDone = level.totalCount > 0 && level.doneCount === level.totalCount;
+        const isFullyDone = workoutsDone && level.challengePassed;
         const nextIndex = level.workouts.findIndex((w) => !w.done);
 
         return (
@@ -37,15 +38,41 @@ export function LevelList({
             </div>
 
             {!level.locked && isFullyDone && (
-              <div className="flex items-center gap-2.5 rounded-[9px] border border-border bg-bg-inset px-3.25 py-2.75 text-[12.5px] text-text-muted">
-                Mind a {level.totalCount} edzés teljesítve
+              <Link
+                href={`/challenge/${level.id}`}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-[9px] border border-border bg-bg-inset px-3.25 py-2.75 text-[12.5px] text-text-muted",
+                  pressClass
+                )}
+              >
+                Mind a {level.totalCount} edzés + challenge teljesítve
                 <span className="mono ml-auto flex items-center gap-1.5 font-medium text-success">
                   <IconCheck width={11} height={11} strokeWidth={3} /> KÉSZ
                 </span>
-              </div>
+              </Link>
             )}
 
-            {!level.locked && !isFullyDone && (
+            {!level.locked && workoutsDone && !level.challengePassed && (
+              <Link
+                href={`/challenge/${level.id}`}
+                className={cn(
+                  "flex items-center gap-3 rounded-[9px] border border-border-strong bg-bg-inset p-3.25",
+                  pressClass
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1.25 truncate text-[13.5px] font-medium">Challenge</div>
+                  <div className="mono text-[11px] text-text-faint">
+                    MIND A {level.totalCount} EDZÉS KÉSZ · TELJESÍTSD A CHALLENGE-T A SZINT LEZÁRÁSÁHOZ
+                  </div>
+                </div>
+                <span className="mono shrink-0 rounded-[7px] border border-warning-border bg-warning-bg px-2.5 py-2 text-[11.5px] font-medium text-warning">
+                  Rajt
+                </span>
+              </Link>
+            )}
+
+            {!level.locked && !workoutsDone && (
               <div className="flex flex-col gap-2 md:grid md:grid-cols-2">
                 {level.workouts.map((w, i) => {
                   const isNext = i === nextIndex;
