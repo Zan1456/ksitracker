@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
+/** Reads/writes the persisted theme, shared by both toggle variants below. */
+function useThemeToggle() {
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,29 @@ export function ThemeToggle() {
       localStorage.setItem("repline-theme", "light");
     }
   }
+
+  return { dark, toggle };
+}
+
+/** Compact icon-button variant for a header/toolbar (e.g. the desktop homepage). */
+export function ThemeToggleButton({ className }: { className?: string }) {
+  const { dark, toggle } = useThemeToggle();
+  return (
+    <button
+      onClick={toggle}
+      aria-label="Sötét téma váltása"
+      className={
+        className ??
+        "flex h-9 w-9 items-center justify-center rounded-[8px] border border-border-strong text-text-secondary"
+      }
+    >
+      {dark ? "☾" : "☀"}
+    </button>
+  );
+}
+
+export function ThemeToggle() {
+  const { dark, toggle } = useThemeToggle();
 
   return (
     <button

@@ -10,14 +10,27 @@ export { BrandMark } from "@/components/brand-mark";
  * it grows into a real desktop layout: a persistent sidebar rail (when `nav`
  * is given) plus a wider content column, instead of the phone card sitting
  * letterboxed in the middle of the screen.
+ *
+ * `wide` lifts the column's cap further at `xl+`, for pages with a bespoke
+ * multi-column desktop layout of their own (e.g. the homepage's hero +
+ * summary rail) instead of just a stretched single column.
  */
-export function AppShell({ children, nav }: { children: ReactNode; nav?: NavVariant }) {
+export function AppShell({
+  children,
+  nav,
+  wide,
+}: {
+  children: ReactNode;
+  nav?: NavVariant;
+  wide?: boolean;
+}) {
   return (
     <div className="flex min-h-screen w-full justify-center">
       {nav && <Sidebar variant={nav} />}
       <div
         className={cn(
           "flex w-full max-w-[520px] flex-1 flex-col border-border md:max-w-[640px]",
+          wide && "xl:max-w-[1180px]",
           nav ? "md:border-r" : "md:border-x"
         )}
       >

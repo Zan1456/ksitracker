@@ -178,3 +178,31 @@ export function formatDateHu(iso: string): string {
     day: "2-digit",
   });
 }
+
+const MONTH_LABELS_ABBR = [
+  "JAN",
+  "FEB",
+  "MÁR",
+  "ÁPR",
+  "MÁJ",
+  "JÚN",
+  "JÚL",
+  "AUG",
+  "SZE",
+  "OKT",
+  "NOV",
+  "DEC",
+];
+
+/** "AUG 24." style abbreviated month + day for an ISO date string. */
+export function monthDayLabel(iso: string): string {
+  const d = new Date(iso + "T00:00:00Z");
+  return `${MONTH_LABELS_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}.`;
+}
+
+/** "MA" / "TEGNAP" / "AUG 24." — compact relative-or-dated label for a recent-activity row. */
+export function relativeDayLabel(iso: string): string {
+  if (iso === todayIso()) return "MA";
+  if (iso === isoDaysAgo(1)) return "TEGNAP";
+  return monthDayLabel(iso);
+}
