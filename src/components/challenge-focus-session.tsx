@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
+import { Ring } from "@/components/ring";
 import { toast } from "@/lib/toast-store";
 import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import {
@@ -20,8 +21,6 @@ type ChallengeLiveTask = {
 };
 
 type TaskResult = { resultMs?: number; resultReps?: number };
-
-const RING_CIRCUMFERENCE = 282.7;
 
 function formatClock(ms: number): string {
   const totalTenths = Math.max(0, Math.round(ms / 100));
@@ -43,26 +42,6 @@ function formatCountdown(ms: number): string {
 function footerValue(t: ChallengeLiveTask): string {
   if (t.resultKind === "reps") return "60 mp";
   return t.targetDistanceMeters ? `${t.targetDistanceMeters} m` : "stopper";
-}
-
-function Ring({ fraction, color }: { fraction: number; color: string }) {
-  const offset = RING_CIRCUMFERENCE * Math.min(1, Math.max(0, fraction));
-  return (
-    <svg viewBox="0 0 100 100" width={236} height={236} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={50} cy={50} r={45} fill="none" stroke="var(--color-border)" strokeWidth={3} />
-      <circle
-        cx={50}
-        cy={50}
-        r={45}
-        fill="none"
-        stroke={color}
-        strokeWidth={3}
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 }
 
 const secondaryBtn =

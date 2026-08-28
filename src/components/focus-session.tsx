@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatSeconds } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { Ring } from "@/components/ring";
+import { IconX, IconPlay, IconPause } from "@/components/icons";
 import { toast } from "@/lib/toast-store";
 import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import { completeTaskAction, completeSessionAction, abandonSessionAction } from "@/app/workout/actions";
@@ -42,8 +44,6 @@ function restAfterRound(t: LiveTask, round: number): number | null {
 
 type TaskResult = { resultMs?: number; resultReps?: number };
 
-const RING_CIRCUMFERENCE = 282.7;
-
 function formatClock(ms: number): string {
   const totalTenths = Math.max(0, Math.round(ms / 100));
   const tenths = totalTenths % 10;
@@ -75,26 +75,6 @@ function footerValue(t: LiveTask): string {
   return t.targetDistanceMeters ? `${t.targetDistanceMeters} m` : "stopper";
 }
 
-function Ring({ fraction, color }: { fraction: number; color: string }) {
-  const offset = RING_CIRCUMFERENCE * Math.min(1, Math.max(0, fraction));
-  return (
-    <svg viewBox="0 0 100 100" width={236} height={236} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={50} cy={50} r={45} fill="none" stroke="var(--color-border)" strokeWidth={3} />
-      <circle
-        cx={50}
-        cy={50}
-        r={45}
-        fill="none"
-        stroke={color}
-        strokeWidth={3}
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function RoundPips({ round, rounds, color }: { round: number; rounds: number; color: string }) {
   return (
     <div className="flex justify-center gap-1.5">
@@ -120,10 +100,17 @@ const primaryBtn =
  */
 function TaskRunner({
   task,
+  index,
+  total,
   onComplete,
+  onRoundChange,
 }: {
   task: LiveTask;
+  index: number;
+  total: number;
   onComplete: (result: TaskResult) => void;
+  /** Reports the task's current round so the parent header can show "N. KÖR" for multi-round tasks. */
+  onRoundChange: (round: number, rounds: number) => void;
 }) {
   const hasRing = task.type !== "reps" && !(task.type === "stopwatch" && task.resultKind === "time");
   const isTimedRound =
@@ -146,6 +133,11 @@ function TaskRunner({
 
   const [swPhase, setSwPhase] = useState<"idle" | "running" | "stopped">("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    onRoundChange(round, task.rounds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round, task.rounds]);
 
   const advanceAfterRound = () => {
     if (round < task.rounds) {
@@ -293,17 +285,16 @@ function TaskRunner({
 
   // ---- Active round ----
   const isRest = task.type === "rest";
+  const ordinalLabel = isRest ? "PIHENŐ" : `FELADAT ${index + 1} / ${total}`;
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4.5 px-6 py-6 text-center">
-      <div className={cn("mono text-[11px] tracking-[0.04em]", isRest ? "text-success" : "text-warning")}>
-        {task.type === "reps"
-          ? "ISMÉTLÉSES FELADAT"
-          : isRest
-            ? "PIHENŐ"
-            : task.type === "stopwatch" && task.resultKind === "time"
-              ? "STOPPERES FELADAT"
-              : "IDŐZÍTETT FELADAT"}
-      </div>
+      {!hasRing && (
+        <div
+          className={cn("mono text-[10.5px] tracking-[0.06em]", isRest ? "text-success" : "text-text-faint")}
+        >
+          {ordinalLabel}
+        </div>
+      )}
 
       {hasRing && (
         <div className="relative h-[236px] w-[236px]">
@@ -312,6 +303,14 @@ function TaskRunner({
             color={isRest ? "#4ea36a" : "#e0b341"}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div
+              className={cn(
+                "mono text-[10.5px] tracking-[0.06em]",
+                isRest ? "text-success" : "text-text-faint"
+              )}
+            >
+              {ordinalLabel}
+            </div>
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
               {formatCountdown(remainingMs)}
             </div>
@@ -339,28 +338,32 @@ function TaskRunner({
       )}
 
       <div>
-        {task.rounds > 1 && (
-          <div className="mb-2.5">
-            <RoundPips round={round} rounds={task.rounds} color="#e0b341" />
-          </div>
-        )}
         <div className="mb-1.5 text-[20px] font-medium tracking-[-0.02em]">{task.name}</div>
         {task.note && <div className="text-[12.5px] leading-[1.4] text-text-muted">{task.note}</div>}
       </div>
 
       {task.type === "time" || isRest || (task.type === "stopwatch" && task.resultKind === "reps") ? (
-        <div className="flex w-full gap-2.5">
+        <div className="flex items-center gap-3.5">
           <button
             onClick={() => setRemainingMs(durationMsFor(round))}
-            className="w-[52px] flex-none rounded-[9px] border border-border-strong bg-transparent text-[13px] font-medium text-text-secondary"
+            aria-label="Újraindítás"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-border-strong text-[15px] font-medium text-text-muted"
           >
             ↺
           </button>
-          <button onClick={() => setRunning((r) => !r)} className={secondaryBtn}>
-            {running ? "Szünet" : "Folytatás"}
+          <button
+            onClick={() => setRunning((r) => !r)}
+            aria-label={running ? "Szünet" : "Folytatás"}
+            className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-full border-0 bg-text text-bg"
+          >
+            {running ? <IconPause width={22} height={22} /> : <IconPlay width={22} height={22} />}
           </button>
-          <button onClick={skipOrFinishRound} className={primaryBtn}>
-            Kész
+          <button
+            onClick={skipOrFinishRound}
+            aria-label="Kész"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-border-strong text-[19px] font-medium text-text-muted"
+          >
+            ›
           </button>
         </div>
       ) : task.type === "reps" ? (
@@ -413,11 +416,13 @@ function TaskRunner({
 export function FocusSession({
   sessionId,
   workoutName,
+  levelIndex,
   tasks,
   completedTaskIds,
 }: {
   sessionId: string;
   workoutName: string;
+  levelIndex: number;
   tasks: LiveTask[];
   completedTaskIds: string[];
 }) {
@@ -432,17 +437,10 @@ export function FocusSession({
   const [index, setIndex] = useState(initialIndex);
   const task = tasks[index] as LiveTask | undefined;
 
-  // Always starts counting from 0 at mount — a resumed/stale in-progress
-  // session's real `startedAt` can be far in the past, which used to make
-  // this show a wildly inflated elapsed time on load.
-  const [elapsedTotalMs, setElapsedTotalMs] = useState(0);
-  useEffect(() => {
-    const mountedAt = Date.now();
-    const interval = setInterval(() => {
-      setElapsedTotalMs(Date.now() - mountedAt);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // The current task's round, reported by TaskRunner — shown in the header
+  // subtitle for multi-round tasks (e.g. "SZINT 2 · 2. KÖR").
+  const [round, setRound] = useState({ round: 1, rounds: 1 });
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   useEffect(() => {
     if (index >= tasks.length) {
@@ -476,68 +474,110 @@ export function FocusSession({
     return <div className="flex min-h-screen items-center justify-center text-text-muted">Mentés…</div>;
   }
 
-  const progressPct = Math.round((index / tasks.length) * 100);
+  const nextTask = tasks[index + 1] as LiveTask | undefined;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col">
-      <div className="flex items-center justify-between px-5 pb-3 pt-3.5">
-        <span className="mono text-[11px] text-text-muted">
-          {workoutName.toUpperCase()} · {index + 1}/{tasks.length}
-        </span>
-        <span className="mono text-[11px] text-text-muted">
-          ELTELT {formatSeconds(elapsedTotalMs / 1000)}
-        </span>
-      </div>
-      <div className="h-[3px] bg-border">
-        <div className="h-[3px] bg-text transition-[width]" style={{ width: `${progressPct}%` }} />
-      </div>
-
-      <TaskRunner key={task.id} task={task} onComplete={handleComplete} />
-
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-2 pt-4">
-        <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
-        {tasks.map((t, i) => {
-          const isDone = i < index;
-          const isCurrent = i === index;
-          if (isDone) {
-            return (
-              <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-[#5f5f5f]">
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success-bg text-[9px] text-success">
-                  ✓
-                </span>
-                <span className="flex-1 truncate line-through">{t.name}</span>
-                <span className="mono text-[11px]">{footerValue(t)}</span>
-              </div>
-            );
-          }
-          if (isCurrent) {
-            return (
-              <div
-                key={t.id}
-                className="-mx-2.75 flex items-center gap-2.75 rounded-lg bg-bg-inset px-2.75 py-2.25 text-[12.5px] font-medium"
-              >
-                <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-warning" />
-                <span className="flex-1 truncate">{t.name}</span>
-                <span className="mono text-[11px] text-warning">{footerValue(t)}</span>
-              </div>
-            );
-          }
-          return (
-            <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-text-muted">
-              <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-border-strong" />
-              <span className="flex-1 truncate">{t.name}</span>
-              <span className="mono text-[11px]">{footerValue(t)}</span>
-            </div>
-          );
-        })}
+      <div className="flex items-center justify-between px-5 pb-2.5 pt-3.5">
         <button
           onClick={quit}
           disabled={isPending}
-          className="mt-auto py-3.5 text-center text-[12px] text-text-faint"
+          aria-label="Edzés megszakítása"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-text-muted"
         >
-          Edzés megszakítása
+          <IconX width={13} height={13} />
+        </button>
+        <div className="text-center">
+          <div className="text-[13px] font-medium">{workoutName}</div>
+          <div className="mono mt-1 text-[10px] tracking-[0.02em] text-text-faint">
+            SZINT {levelIndex}
+            {round.rounds > 1 ? ` · ${round.round}. KÖR` : ""}
+          </div>
+        </div>
+        <button
+          onClick={() => setShowAllTasks((v) => !v)}
+          aria-label="Feladatlista"
+          aria-expanded={showAllTasks}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-[15px] text-text-muted"
+        >
+          ⋯
         </button>
       </div>
+
+      <div className="flex gap-1.25 px-5 pb-1">
+        {tasks.map((t, i) => (
+          <span
+            key={t.id}
+            className={cn("h-[3px] flex-1 rounded-full", i < index ? "bg-success" : i === index ? "bg-text" : "bg-border-strong")}
+          />
+        ))}
+      </div>
+
+      <TaskRunner
+        key={task.id}
+        task={task}
+        index={index}
+        total={tasks.length}
+        onComplete={handleComplete}
+        onRoundChange={(r, rounds) => setRound({ round: r, rounds })}
+      />
+
+      {nextTask ? (
+        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4">
+          <span className="mono flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-border-strong bg-bg-elevated text-[11px] text-text-faint">
+            {index + 2}
+          </span>
+          <div className="min-w-0 flex-1 text-left">
+            <div className="mono mb-1.5 text-[10px] text-text-faint">KÖVETKEZIK</div>
+            <div className="truncate text-[13px] font-medium">{nextTask.name}</div>
+          </div>
+          <span className="mono shrink-0 text-[11px] text-text-faint">{footerValue(nextTask)}</span>
+        </div>
+      ) : (
+        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint">
+          Utolsó feladat
+        </div>
+      )}
+
+      {showAllTasks && (
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4">
+          <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
+          {tasks.map((t, i) => {
+            const isDone = i < index;
+            const isCurrent = i === index;
+            if (isDone) {
+              return (
+                <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-[#5f5f5f]">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success-bg text-[9px] text-success">
+                    ✓
+                  </span>
+                  <span className="flex-1 truncate line-through">{t.name}</span>
+                  <span className="mono text-[11px]">{footerValue(t)}</span>
+                </div>
+              );
+            }
+            if (isCurrent) {
+              return (
+                <div
+                  key={t.id}
+                  className="-mx-2.75 flex items-center gap-2.75 rounded-lg bg-bg-inset px-2.75 py-2.25 text-[12.5px] font-medium"
+                >
+                  <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-warning" />
+                  <span className="flex-1 truncate">{t.name}</span>
+                  <span className="mono text-[11px] text-warning">{footerValue(t)}</span>
+                </div>
+              );
+            }
+            return (
+              <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-text-muted">
+                <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-border-strong" />
+                <span className="flex-1 truncate">{t.name}</span>
+                <span className="mono text-[11px]">{footerValue(t)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
