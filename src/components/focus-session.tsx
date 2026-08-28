@@ -579,7 +579,7 @@ export function FocusSession({
       />
 
       {nextTask ? (
-        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4">
+        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4 xl:hidden">
           <span className="mono flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-border-strong bg-bg-elevated text-[11px] text-text-faint">
             {index + 2}
           </span>
@@ -590,50 +590,31 @@ export function FocusSession({
           <span className="mono shrink-0 text-[11px] text-text-faint">{footerValue(nextTask)}</span>
         </div>
       ) : (
-        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint">
+        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint xl:hidden">
           Utolsó feladat
         </div>
       )}
 
       {showAllTasks && (
-        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4">
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4 xl:hidden">
           <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
-          {tasks.map((t, i) => {
-            const isDone = i < index;
-            const isCurrent = i === index;
-            if (isDone) {
-              return (
-                <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-[#5f5f5f]">
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success-bg text-[9px] text-success">
-                    ✓
-                  </span>
-                  <span className="flex-1 truncate line-through">{t.name}</span>
-                  <span className="mono text-[11px]">{footerValue(t)}</span>
-                </div>
-              );
-            }
-            if (isCurrent) {
-              return (
-                <div
-                  key={t.id}
-                  className="-mx-2.75 flex items-center gap-2.75 rounded-lg bg-bg-inset px-2.75 py-2.25 text-[12.5px] font-medium"
-                >
-                  <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-warning" />
-                  <span className="flex-1 truncate">{t.name}</span>
-                  <span className="mono text-[11px] text-warning">{footerValue(t)}</span>
-                </div>
-              );
-            }
-            return (
-              <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-text-muted">
-                <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-border-strong" />
-                <span className="flex-1 truncate">{t.name}</span>
-                <span className="mono text-[11px]">{footerValue(t)}</span>
-              </div>
-            );
-          })}
+          <TaskListRows tasks={tasks} index={index} />
         </div>
       )}
+    </div>
+
+    {/* Desktop task panel — always visible, no toggle needed at this width. */}
+    <div className="hidden w-[400px] shrink-0 flex-col border-l border-border bg-bg-inset xl:flex">
+      <div className="border-b border-border px-6 py-5">
+        <div className="text-[15px] font-medium">Feladatok</div>
+        <div className="mono mt-2 text-[11px] text-text-faint">
+          ELTELT {formatSeconds(elapsedTotalMs / 1000)} · {tasks.length - index} FELADAT HÁTRA
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
+        <TaskListRows tasks={tasks} index={index} />
+      </div>
+    </div>
     </div>
   );
 }
