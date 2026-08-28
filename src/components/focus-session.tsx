@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatSeconds } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast-store";
+import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import { completeTaskAction, completeSessionAction, abandonSessionAction } from "@/app/workout/actions";
 
 type RoundConfig = { work: number; restSeconds: number | null };
@@ -173,9 +174,16 @@ function TaskRunner({
     const interval = setInterval(() => {
       setRemainingMs((prev) => {
         const next = prev - 100;
-        if (next > 0) return next;
+        if (next > 0) {
+          // Beep once as the displayed countdown ticks over to 3, 2, and 1.
+          const prevSec = Math.ceil(prev / 1000);
+          const nextSec = Math.ceil(next / 1000);
+          if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+          return next;
+        }
         clearInterval(interval);
         setRunning(false);
+        playTransitionChime();
         if (phase === "resting") {
           setRound((r) => r + 1);
           setPhase("active");
@@ -204,6 +212,7 @@ function TaskRunner({
   }, [swPhase, task.type, task.resultKind]);
 
   function skipOrFinishRound() {
+    playTransitionChime();
     if (phase === "resting") {
       setRound((r) => r + 1);
       setPhase("active");
@@ -270,7 +279,10 @@ function TaskRunner({
         />
         <button
           disabled={!repsInput}
-          onClick={() => onComplete({ resultReps: Number(repsInput) })}
+          onClick={() => {
+            playTransitionChime();
+            onComplete({ resultReps: Number(repsInput) });
+          }}
           className={cn(primaryBtn, "w-full flex-none disabled:opacity-50")}
         >
           Mentés és tovább
@@ -383,7 +395,13 @@ function TaskRunner({
           >
             Újra
           </button>
-          <button onClick={() => onComplete({ resultMs: elapsedMs })} className={primaryBtn}>
+          <button
+            onClick={() => {
+              playTransitionChime();
+              onComplete({ resultMs: elapsedMs });
+            }}
+            className={primaryBtn}
+          >
             Mentés és tovább
           </button>
         </div>

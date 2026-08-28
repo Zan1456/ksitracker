@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast-store";
+import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import {
   completeChallengeTaskAction,
   skipChallengeTaskAction,
@@ -98,9 +99,16 @@ function ChallengeTaskRunner({
     const interval = setInterval(() => {
       setRemainingMs((prev) => {
         const next = prev - 100;
-        if (next > 0) return next;
+        if (next > 0) {
+          // Beep once as the displayed countdown ticks over to 3, 2, and 1.
+          const prevSec = Math.ceil(prev / 1000);
+          const nextSec = Math.ceil(next / 1000);
+          if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+          return next;
+        }
         clearInterval(interval);
         setRunning(false);
+        playTransitionChime();
         setPhase("awaiting-input");
         return 0;
       });
@@ -116,7 +124,13 @@ function ChallengeTaskRunner({
   }, [isAmrap, swPhase]);
 
   const skipButton = (
-    <button onClick={onSkip} className="text-[12.5px] text-text-faint">
+    <button
+      onClick={() => {
+        playTransitionChime();
+        onSkip();
+      }}
+      className="text-[12.5px] text-text-faint"
+    >
       Kihagyás
     </button>
   );
@@ -136,7 +150,10 @@ function ChallengeTaskRunner({
         />
         <button
           disabled={!repsInput}
-          onClick={() => onComplete({ resultReps: Number(repsInput) })}
+          onClick={() => {
+            playTransitionChime();
+            onComplete({ resultReps: Number(repsInput) });
+          }}
           className={cn(primaryBtn, "w-full flex-none disabled:opacity-50")}
         >
           Mentés és tovább
@@ -213,7 +230,13 @@ function ChallengeTaskRunner({
           >
             Újra
           </button>
-          <button onClick={() => onComplete({ resultMs: elapsedMs })} className={primaryBtn}>
+          <button
+            onClick={() => {
+              playTransitionChime();
+              onComplete({ resultMs: elapsedMs });
+            }}
+            className={primaryBtn}
+          >
             Mentés és tovább
           </button>
         </div>
