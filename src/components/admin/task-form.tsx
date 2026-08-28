@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast-store";
 import { createTaskAction, updateTaskAction } from "@/app/admin/plans/actions";
 import type { WorkoutTask } from "@/db/schema";
 
-type TaskType = "reps" | "time";
+type TaskType = "reps" | "time" | "rest";
 
 /** One row of the custom per-round work/rest editor. */
 type RoundRow = { work: number; rest: string };
@@ -82,6 +82,7 @@ export function TaskForm({
           >
             <option value="reps">Ismétlés</option>
             <option value="time">Idő</option>
+            <option value="rest">Pihenő</option>
           </select>
         </label>
       </div>
@@ -151,7 +152,20 @@ export function TaskForm({
         </div>
       )}
 
-      {rounds > 1 && (
+      {type === "rest" && (
+        <label className="flex flex-col gap-1.5">
+          <Label>Pihenő időtartama (mp)</Label>
+          <Input
+            name="targetSeconds"
+            type="number"
+            min={1}
+            defaultValue={task?.targetSeconds ?? 60}
+            required
+          />
+        </label>
+      )}
+
+      {type !== "rest" && rounds > 1 && (
         <label className="flex items-center gap-1.75 text-[12.5px] text-text-secondary">
           <input
             type="checkbox"
@@ -163,7 +177,7 @@ export function TaskForm({
         </label>
       )}
 
-      {rounds > 1 && customRounds && (
+      {type !== "rest" && rounds > 1 && customRounds && (
         <div className="flex flex-col gap-1.75 rounded-lg border border-border-strong bg-bg-inset p-2.5">
           {roundRows.map((row, i) => (
             <div key={i} className="flex items-center gap-1.75">
@@ -194,7 +208,7 @@ export function TaskForm({
         </div>
       )}
 
-      {rounds > 1 && !customRounds && (
+      {type !== "rest" && rounds > 1 && !customRounds && (
         <label className="flex flex-col gap-1.5">
           <Label>Pihenő körök között (mp) — üresen hagyva nincs pihenő</Label>
           <Input

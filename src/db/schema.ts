@@ -13,7 +13,7 @@ import {
 import { relations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
-export const taskTypeEnum = pgEnum("task_type", ["reps", "time", "stopwatch"]);
+export const taskTypeEnum = pgEnum("task_type", ["reps", "time", "stopwatch", "rest"]);
 export const sessionStatusEnum = pgEnum("session_status", [
   "in_progress",
   "completed",

@@ -87,7 +87,7 @@ export function difficultyLabel(d: "easy" | "medium" | "hard"): string {
 type RoundConfigLike = { work: number; restSeconds: number | null };
 
 type TaskLike = {
-  type: "reps" | "time" | "stopwatch";
+  type: "reps" | "time" | "stopwatch" | "rest";
   targetReps?: number | null;
   targetSeconds?: number | null;
   targetDistanceMeters?: number | null;
@@ -119,6 +119,7 @@ export function taskMetaLabel(t: TaskLike): string {
     const prefix = t.rounds > 1 ? `${t.rounds} KÖR · ` : "";
     return `${prefix}${formatSeconds(t.targetSeconds ?? 0)} TARTÁS`;
   }
+  if (t.type === "rest") return `${formatSeconds(t.targetSeconds ?? 0)} PIHENŐ`;
   if (t.resultKind === "reps") return "60 MP · AMRAP";
   if (t.targetDistanceMeters) return `${t.targetDistanceMeters} M · STOPPER`;
   return "STOPPER";
@@ -156,6 +157,9 @@ export function taskRowDisplay(t: FullTaskLike): TaskRowDisplay {
       subtext = "IDŐZÍTŐVEL";
     }
     return { subtext, value: formatSeconds(t.targetSeconds ?? 0), amber: true };
+  }
+  if (t.type === "rest") {
+    return { subtext: "PIHENŐ", value: formatSeconds(t.targetSeconds ?? 0), amber: false };
   }
   // stopwatch — always leaderboard-eligible in this app
   const subtext = "STOPPEREZETT · RANGLISTA";

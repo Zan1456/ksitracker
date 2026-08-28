@@ -198,7 +198,7 @@ const taskSchema = z
   .object({
     name: z.string().trim().min(1, "Adj meg egy nevet."),
     note: z.string().trim().optional(),
-    type: z.enum(["reps", "time"]),
+    type: z.enum(["reps", "time", "rest"]),
     targetReps: z.coerce.number().int().min(1).optional(),
     perSide: z.coerce.boolean().optional(),
     targetSeconds: z.coerce.number().int().min(1).optional(),
@@ -216,6 +216,10 @@ const taskSchema = z
   })
   .refine((v) => v.type !== "time" || !!v.targetSeconds, {
     message: "Add meg az időtartamot (mp).",
+    path: ["targetSeconds"],
+  })
+  .refine((v) => v.type !== "rest" || !!v.targetSeconds, {
+    message: "Add meg a pihenő időtartamát (mp).",
     path: ["targetSeconds"],
   })
   .refine((v) => !v.customRounds || v.rounds <= 1 || v.roundWork.length === v.rounds, {
@@ -255,7 +259,12 @@ function normalizeTaskValues(v: z.infer<typeof taskSchema>) {
     type: v.type,
     targetReps: v.type === "reps" ? (roundsConfig ? roundsConfig[0].work : v.targetReps ?? null) : null,
     perSide: v.type === "reps" ? !!v.perSide : false,
-    targetSeconds: v.type === "time" ? (roundsConfig ? roundsConfig[0].work : v.targetSeconds ?? null) : null,
+    targetSeconds:
+      v.type === "time" || v.type === "rest"
+        ? roundsConfig
+          ? roundsConfig[0].work
+          : v.targetSeconds ?? null
+        : null,
     targetDistanceMeters: null,
     rankDirection: null,
     resultKind: null,

@@ -12,7 +12,7 @@ type LiveTask = {
   id: string;
   name: string;
   note: string | null;
-  type: "reps" | "time" | "stopwatch";
+  type: "reps" | "time" | "stopwatch" | "rest";
   targetReps: number | null;
   perSide: boolean;
   targetSeconds: number | null;
@@ -29,7 +29,7 @@ type LiveTask = {
 function workForRound(t: LiveTask, round: number): number {
   const custom = t.roundsConfig?.[round - 1]?.work;
   if (custom != null) return custom;
-  return (t.type === "time" ? t.targetSeconds : t.targetReps) ?? 0;
+  return (t.type === "time" || t.type === "rest" ? t.targetSeconds : t.targetReps) ?? 0;
 }
 
 /** The rest, in seconds, after finishing the given round — null means no rest. */
@@ -69,7 +69,7 @@ function footerValue(t: LiveTask): string {
     const reps = t.perSide ? `${t.targetReps}+${t.targetReps}` : `${t.targetReps}`;
     return t.rounds > 1 ? `${t.rounds}×${t.targetReps}` : reps;
   }
-  if (t.type === "time") return formatSeconds(t.targetSeconds ?? 0);
+  if (t.type === "time" || t.type === "rest") return formatSeconds(t.targetSeconds ?? 0);
   if (t.resultKind === "reps") return "60 mp";
   return t.targetDistanceMeters ? `${t.targetDistanceMeters} m` : "stopper";
 }
@@ -125,12 +125,17 @@ function TaskRunner({
   onComplete: (result: TaskResult) => void;
 }) {
   const hasRing = task.type !== "reps" && !(task.type === "stopwatch" && task.resultKind === "time");
-  const isTimedRound = task.type === "time" || (task.type === "stopwatch" && task.resultKind === "reps");
+  const isTimedRound =
+    task.type === "time" || task.type === "rest" || (task.type === "stopwatch" && task.resultKind === "reps");
   // A task with a custom per-round schedule can have a different work
   // duration/rep count in every round, so this is a function of the round
   // rather than a single constant.
   const durationMsFor = (r: number) =>
-    task.type === "time" ? workForRound(task, r) * 1000 : task.resultKind === "reps" ? 60_000 : 0;
+    task.type === "time" || task.type === "rest"
+      ? workForRound(task, r) * 1000
+      : task.resultKind === "reps"
+        ? 60_000
+        : 0;
 
   const [round, setRound] = useState(1);
   const [phase, setPhase] = useState<"active" | "resting" | "awaiting-input">("active");
@@ -275,25 +280,31 @@ function TaskRunner({
   }
 
   // ---- Active round ----
+  const isRest = task.type === "rest";
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4.5 px-6 py-6 text-center">
-      <div className="mono text-[11px] tracking-[0.04em] text-warning">
+      <div className={cn("mono text-[11px] tracking-[0.04em]", isRest ? "text-success" : "text-warning")}>
         {task.type === "reps"
           ? "ISMÉTLÉSES FELADAT"
-          : task.type === "stopwatch" && task.resultKind === "time"
-            ? "STOPPERES FELADAT"
-            : "IDŐZÍTETT FELADAT"}
+          : isRest
+            ? "PIHENŐ"
+            : task.type === "stopwatch" && task.resultKind === "time"
+              ? "STOPPERES FELADAT"
+              : "IDŐZÍTETT FELADAT"}
       </div>
 
       {hasRing && (
         <div className="relative h-[236px] w-[236px]">
-          <Ring fraction={durationMsFor(round) ? 1 - remainingMs / durationMsFor(round) : 0} color="#e0b341" />
+          <Ring
+            fraction={durationMsFor(round) ? 1 - remainingMs / durationMsFor(round) : 0}
+            color={isRest ? "#4ea36a" : "#e0b341"}
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
               {formatCountdown(remainingMs)}
             </div>
             <div className="mono text-[11px] text-text-faint">
-              {task.type === "time"
+              {task.type === "time" || isRest
                 ? `${formatSeconds(workForRound(task, round))}-BÓL`
                 : "60 MP-BŐL"}
             </div>
@@ -325,7 +336,7 @@ function TaskRunner({
         {task.note && <div className="text-[12.5px] leading-[1.4] text-text-muted">{task.note}</div>}
       </div>
 
-      {task.type === "time" || (task.type === "stopwatch" && task.resultKind === "reps") ? (
+      {task.type === "time" || isRest || (task.type === "stopwatch" && task.resultKind === "reps") ? (
         <div className="flex w-full gap-2.5">
           <button
             onClick={() => setRemainingMs(durationMsFor(round))}
