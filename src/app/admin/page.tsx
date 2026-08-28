@@ -10,21 +10,25 @@ export default async function AdminUsersPage() {
   await requireAdmin();
   const rows = await getAdminUserList();
   const withInactive = rows.map((r) => ({ ...r, inactive: isInactive(r) }));
+  const activeCount = withInactive.filter((r) => !r.inactive).length;
 
   return (
-    <AppShell nav="admin">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[16px] font-medium tracking-[-0.02em]">Felhasználók</span>
-          <span className="mono rounded-[5px] border border-border-strong px-1.5 py-1 text-[10px] text-text-secondary">
+    <AppShell nav="admin" wide>
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5 xl:px-7 xl:py-5">
+        <div className="flex items-center gap-2 xl:block">
+          <span className="text-[16px] font-medium tracking-[-0.02em] xl:text-[19px]">Felhasználók</span>
+          <span className="mono rounded-[5px] border border-border-strong px-1.5 py-1 text-[10px] text-text-secondary xl:hidden">
             ADMIN
           </span>
+          <div className="mono mt-2 hidden text-[11px] text-text-faint xl:block">
+            {rows.length} FIÓK · {activeCount} AKTÍV
+          </div>
         </div>
         <Link
           href="/admin/users/new"
-          className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
+          className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95 xl:rounded-[8px] xl:px-4 xl:py-2.5 xl:text-[13px]"
         >
-          + Új
+          + Új felhasználó
         </Link>
       </div>
 

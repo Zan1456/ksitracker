@@ -413,6 +413,48 @@ function TaskRunner({
   );
 }
 
+/** Task rows for the always-visible list — shared by the mobile toggle panel and the desktop side panel. */
+function TaskListRows({ tasks, index }: { tasks: LiveTask[]; index: number }) {
+  return (
+    <>
+      {tasks.map((t, i) => {
+        const isDone = i < index;
+        const isCurrent = i === index;
+        if (isDone) {
+          return (
+            <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-[#5f5f5f]">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success-bg text-[9px] text-success">
+                ✓
+              </span>
+              <span className="flex-1 truncate line-through">{t.name}</span>
+              <span className="mono text-[11px]">{footerValue(t)}</span>
+            </div>
+          );
+        }
+        if (isCurrent) {
+          return (
+            <div
+              key={t.id}
+              className="-mx-2.75 flex items-center gap-2.75 rounded-lg bg-bg-inset px-2.75 py-2.25 text-[12.5px] font-medium"
+            >
+              <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-warning" />
+              <span className="flex-1 truncate">{t.name}</span>
+              <span className="mono text-[11px] text-warning">{footerValue(t)}</span>
+            </div>
+          );
+        }
+        return (
+          <div key={t.id} className="flex items-center gap-2.75 text-[12.5px] text-text-muted">
+            <span className="h-4 w-4 shrink-0 rounded-full border-[1.5px] border-border-strong" />
+            <span className="flex-1 truncate">{t.name}</span>
+            <span className="mono text-[11px]">{footerValue(t)}</span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function FocusSession({
   sessionId,
   workoutName,
@@ -441,6 +483,19 @@ export function FocusSession({
   // subtitle for multi-round tasks (e.g. "SZINT 2 · 2. KÖR").
   const [round, setRound] = useState({ round: 1, rounds: 1 });
   const [showAllTasks, setShowAllTasks] = useState(false);
+
+  // Always starts counting from 0 at mount — a resumed/stale in-progress
+  // session's real `startedAt` can be far in the past, which used to make
+  // this show a wildly inflated elapsed time on load. Only shown on the
+  // desktop side panel; not worth ticking a re-render for on mobile.
+  const [elapsedTotalMs, setElapsedTotalMs] = useState(0);
+  useEffect(() => {
+    const mountedAt = Date.now();
+    const interval = setInterval(() => {
+      setElapsedTotalMs(Date.now() - mountedAt);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (index >= tasks.length) {
@@ -477,7 +532,8 @@ export function FocusSession({
   const nextTask = tasks[index + 1] as LiveTask | undefined;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col">
+    <div className="flex min-h-screen w-full xl:justify-center">
+    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col xl:mx-0 xl:max-w-[640px]">
       <div className="flex items-center justify-between px-5 pb-2.5 pt-3.5">
         <button
           onClick={quit}

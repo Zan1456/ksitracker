@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { users, workoutSessions, workouts, levels } from "@/db/schema";
 import { getLevelsWithProgress } from "./workout-data";
@@ -12,6 +12,7 @@ export type AdminUserRow = {
   isBanned: boolean;
   doneCount: number;
   totalCount: number;
+  currentLevelIndex: number;
   lastActiveDate: string | null;
   daysInactive: number | null;
 };
@@ -19,14 +20,24 @@ export type AdminUserRow = {
 const INACTIVE_THRESHOLD_DAYS = 14;
 
 export async function getAdminUserList(): Promise<AdminUserRow[]> {
-  const [allUsers, allWorkouts, allCompleted] = await Promise.all([
+  const [allUsers, allLevels, allWorkouts, allCompleted] = await Promise.all([
     db.select().from(users).where(ne(users.role, "admin")),
+    db.select().from(levels).orderBy(asc(levels.order)),
     db.select().from(workouts),
     db.select().from(workoutSessions).where(eq(workoutSessions.status, "completed")),
   ]);
   const total = allWorkouts.length;
 
   const today = todayIso();
+
+  // Which workout ids belong to each level, in level order — used below to
+  // find the first level a user hasn't fully cleared yet.
+  const workoutIdsByLevel = new Map<string, string[]>();
+  for (const w of allWorkouts) {
+    const ids = workoutIdsByLevel.get(w.levelId) ?? [];
+    ids.push(w.id);
+    workoutIdsByLevel.set(w.levelId, ids);
+  }
 
   return allUsers.map((u) => {
     const mine = allCompleted.filter((s) => s.userId === u.id);
@@ -41,6 +52,16 @@ export async function getAdminUserList(): Promise<AdminUserRow[]> {
         )
       : null;
 
+    let currentLevelIndex = allLevels[allLevels.length - 1]?.index ?? 1;
+    for (const level of allLevels) {
+      const ids = workoutIdsByLevel.get(level.id) ?? [];
+      const cleared = ids.length > 0 && ids.every((id) => doneWorkoutIds.has(id));
+      if (!cleared) {
+        currentLevelIndex = level.index;
+        break;
+      }
+    }
+
     return {
       id: u.id,
       name: u.name,
@@ -48,6 +69,7 @@ export async function getAdminUserList(): Promise<AdminUserRow[]> {
       isBanned: u.isBanned,
       doneCount: doneWorkoutIds.size,
       totalCount: total,
+      currentLevelIndex,
       lastActiveDate,
       daysInactive,
     };
