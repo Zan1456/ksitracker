@@ -337,12 +337,12 @@ function TaskRunner({
             {running ? "Szünet" : "Folytatás"}
           </button>
           <button onClick={skipOrFinishRound} className={primaryBtn}>
-            Kész ✓
+            Kész
           </button>
         </div>
       ) : task.type === "reps" ? (
         <button onClick={skipOrFinishRound} className={cn(primaryBtn, "w-full flex-none")}>
-          Kész ✓
+          Kész
         </button>
       ) : swPhase !== "stopped" ? (
         <div className="flex w-full flex-col items-center gap-2.5">
