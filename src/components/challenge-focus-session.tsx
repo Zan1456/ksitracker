@@ -176,7 +176,6 @@ function ChallengeTaskRunner({
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
               {formatCountdown(remainingMs)}
             </div>
-            <div className="mono text-[11px] text-text-faint">60 MP-BŐL</div>
           </div>
         </div>
       ) : (

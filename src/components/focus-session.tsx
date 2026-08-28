@@ -315,11 +315,11 @@ function TaskRunner({
             <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
               {formatCountdown(remainingMs)}
             </div>
-            <div className="mono text-[11px] text-text-faint">
-              {task.type === "time" || isRest
-                ? `${formatSeconds(workForRound(task, round))}-BÓL`
-                : "60 MP-BŐL"}
-            </div>
+            {(task.type === "time" || isRest) && (
+              <div className="mono text-[11px] text-text-faint">
+                {formatSeconds(workForRound(task, round))}-BÓL
+              </div>
+            )}
           </div>
         </div>
       )}
