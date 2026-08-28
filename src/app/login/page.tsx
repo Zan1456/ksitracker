@@ -39,23 +39,6 @@ export default function LoginPage() {
         <Button type="submit" size="lg" disabled={pending} className="mt-1">
           {pending ? "Belépés…" : "Belépés"}
         </Button>
-
-        <div className="my-1 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="mono text-[10.5px] text-text-faint">VAGY</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          disabled
-          title="A Google bejelentkezés jelenleg nincs beállítva"
-        >
-          <span className="inline-block h-3.5 w-3.5 rounded-[3px] border-[1.5px] border-text-muted" />
-          Folytatás Google-fiókkal
-        </Button>
       </form>
 
       <p className="mt-7 text-[13px] text-text-muted">

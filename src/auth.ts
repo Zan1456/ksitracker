@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/db";
@@ -14,9 +13,6 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-// The Google provider is only wired up when credentials are configured in the
-// environment — the button still renders (disabled) in the UI otherwise, per
-// the mockup.
 const providers: Provider[] = [
   Credentials({
     name: "credentials",
@@ -45,15 +41,6 @@ const providers: Provider[] = [
     },
   }),
 ];
-
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
-  );
-}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
