@@ -267,7 +267,6 @@ export function ChallengeFocusSession({
   }
 
   const progressPct = Math.round((index / tasks.length) * 100);
-  const passed = doneIds.size >= minRequired;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col">
@@ -275,15 +274,13 @@ export function ChallengeFocusSession({
         <span className="mono text-[11px] text-text-muted">
           SZINT {levelIndex} CHALLENGE · {index + 1}/{tasks.length}
         </span>
-        <span className={cn("mono text-[11px]", passed ? "text-success" : "text-text-muted")}>
-          {doneIds.size}/{minRequired} TELJESÍTVE
-        </span>
+        <span className="mono text-[11px] text-text-muted">{doneIds.size}/{tasks.length} KÉSZ</span>
       </div>
       <div className="h-[3px] bg-border">
         <div className="h-[3px] bg-text transition-[width]" style={{ width: `${progressPct}%` }} />
       </div>
 
-      <ChallengeTaskRunner key={task.id} task={task} onComplete={handleComplete} onSkip={handleSkip} />
+      <ChallengeTaskRunner key={task.id} task={task} onComplete={handleComplete} />
 
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-2 pt-4">
         <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
