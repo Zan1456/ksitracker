@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth-helpers";
-import { getChallengeTasks, getOrCreateChallengeSettings } from "@/lib/challenge-data";
+import { getChallengeTasks, getOrCreateChallengeSettings, getLiftableWorkoutTasks } from "@/lib/challenge-data";
 import { AppShell, AppHeader } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { PageTransition } from "@/components/motion/page-transition";
@@ -9,7 +9,11 @@ import { ChallengeSettingsForm } from "@/components/admin/challenge-settings-for
 export default async function AdminChallengePage() {
   await requireAdmin();
 
-  const [tasks, settings] = await Promise.all([getChallengeTasks(), getOrCreateChallengeSettings()]);
+  const [tasks, settings, liftableTasks] = await Promise.all([
+    getChallengeTasks(),
+    getOrCreateChallengeSettings(),
+    getLiftableWorkoutTasks(),
+  ]);
 
   return (
     <AppShell nav="admin">
@@ -24,7 +28,7 @@ export default async function AdminChallengePage() {
 
         <ChallengeSettingsForm minRequired={settings.minRequired} taskCount={tasks.length} />
 
-        <ChallengeTaskManager tasks={tasks} />
+        <ChallengeTaskManager tasks={tasks} liftableTasks={liftableTasks} />
       </PageTransition>
 
       <BottomNav variant="admin" />

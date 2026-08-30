@@ -175,6 +175,11 @@ export const challengeSessions = pgTable("challenge_sessions", {
   totalSeconds: integer("total_seconds"),
   // Whether at least `challengeSettings.minRequired` tasks were completed.
   passed: boolean("passed").notNull().default(false),
+  // The subset of challengeTasks the user picked to attempt, in display
+  // order — chosen up front when starting the session. Only these are shown
+  // during the run; null on legacy sessions started before this existed
+  // (treated as "all tasks" by callers).
+  selectedTaskIds: jsonb("selected_task_ids").$type<string[]>(),
 });
 
 export const challengeTaskResults = pgTable(

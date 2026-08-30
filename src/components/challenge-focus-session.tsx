@@ -7,7 +7,6 @@ import { toast } from "@/lib/toast-store";
 import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import {
   completeChallengeTaskAction,
-  skipChallengeTaskAction,
   completeChallengeSessionAction,
   abandonChallengeSessionAction,
 } from "@/app/challenge/actions";
@@ -51,18 +50,16 @@ const primaryBtn =
 
 /**
  * Runs a single challenge task — either an open-ended stopwatch (resultKind
- * "time") or a 60s AMRAP-style rep count (resultKind "reps"). Unlike workout
- * tasks, every challenge task can also be skipped without a result, since
- * only a minimum count of them needs to be completed.
+ * "time") or a 60s AMRAP-style rep count (resultKind "reps"). Which tasks
+ * appear here was already decided by the user up front when starting the
+ * challenge, so every task shown must be completed to finish the session.
  */
 function ChallengeTaskRunner({
   task,
   onComplete,
-  onSkip,
 }: {
   task: ChallengeLiveTask;
   onComplete: (result: TaskResult) => void;
-  onSkip: () => void;
 }) {
   const isAmrap = task.resultKind === "reps";
   const [phase, setPhase] = useState<"active" | "awaiting-input">("active");

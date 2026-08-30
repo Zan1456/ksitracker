@@ -1,6 +1,6 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { challengeTasks, challengeSettings, challengeSessions } from "@/db/schema";
+import { challengeTasks, challengeSettings, challengeSessions, workoutTasks, workouts, levels } from "@/db/schema";
 import { todayIso } from "./format";
 
 export type ChallengeTaskDTO = typeof challengeTasks.$inferSelect;
@@ -8,6 +8,47 @@ export type ChallengeTaskDTO = typeof challengeTasks.$inferSelect;
 /** The global, level-agnostic list of challenge tasks, in display order. */
 export async function getChallengeTasks(): Promise<ChallengeTaskDTO[]> {
   return db.select().from(challengeTasks).orderBy(asc(challengeTasks.order));
+}
+
+export type LiftableWorkoutTask = {
+  id: string;
+  name: string;
+  note: string | null;
+  type: "reps" | "time" | "stopwatch";
+  targetDistanceMeters: number | null;
+  resultKind: "time" | "reps" | null;
+  rankDirection: "asc" | "desc" | null;
+  workoutName: string;
+  levelIndex: number;
+  levelName: string;
+};
+
+/**
+ * Every workout task an admin could "lift" into the global challenge list
+ * (everything except "rest" tasks, which have no result to rank). Used by
+ * the admin challenge editor to prefill a new challenge task from an
+ * existing training-plan exercise instead of typing it from scratch.
+ */
+export async function getLiftableWorkoutTasks(): Promise<LiftableWorkoutTask[]> {
+  const rows = await db
+    .select({
+      id: workoutTasks.id,
+      name: workoutTasks.name,
+      note: workoutTasks.note,
+      type: workoutTasks.type,
+      targetDistanceMeters: workoutTasks.targetDistanceMeters,
+      resultKind: workoutTasks.resultKind,
+      rankDirection: workoutTasks.rankDirection,
+      workoutName: workouts.name,
+      levelIndex: levels.index,
+      levelName: levels.name,
+    })
+    .from(workoutTasks)
+    .innerJoin(workouts, eq(workoutTasks.workoutId, workouts.id))
+    .innerJoin(levels, eq(workouts.levelId, levels.id))
+    .where(ne(workoutTasks.type, "rest"))
+    .orderBy(asc(levels.order), asc(workouts.order), asc(workoutTasks.order));
+  return rows as LiftableWorkoutTask[];
 }
 
 /**

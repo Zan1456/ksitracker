@@ -6,11 +6,11 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { challengeSessions, challengeTaskResults } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
-import { getChallengeDailyLimitInfo, getOrCreateChallengeSettings } from "@/lib/challenge-data";
+import { getChallengeDailyLimitInfo, getChallengeTasks, getOrCreateChallengeSettings } from "@/lib/challenge-data";
 import { getLevelsWithProgress } from "@/lib/workout-data";
 import { todayIso } from "@/lib/format";
 
-export async function startChallengeSessionAction(levelId: string) {
+export async function startChallengeSessionAction(levelId: string, selectedTaskIds: string[]) {
   const user = await requireUser();
 
   const limit = await getChallengeDailyLimitInfo(user.id);
@@ -24,13 +24,22 @@ export async function startChallengeSessionAction(levelId: string) {
   }
 
   if (!limit.canStartNew) {
-    redirect(`/challenge/${levelId}?limit=1`);
+    redirect(`/challenge/${levelId}`);
   }
 
   const levels = await getLevelsWithProgress(user.id);
   const level = levels.find((l) => l.id === levelId);
   const workoutsDone = !!level && level.totalCount > 0 && level.doneCount === level.totalCount;
   if (!level || level.locked || !workoutsDone) redirect("/");
+
+  // Re-validate the selection server-side: keep only real task ids, in the
+  // list's canonical order, and require at least `minRequired` of them.
+  const [allTasks, settings] = await Promise.all([getChallengeTasks(), getOrCreateChallengeSettings()]);
+  const selected = new Set(selectedTaskIds);
+  const orderedSelectedIds = allTasks.filter((t) => selected.has(t.id)).map((t) => t.id);
+  if (orderedSelectedIds.length < settings.minRequired) {
+    redirect(`/challenge/${levelId}?error=selection`);
+  }
 
   const [session] = await db
     .insert(challengeSessions)
@@ -39,6 +48,7 @@ export async function startChallengeSessionAction(levelId: string) {
       levelId,
       status: "in_progress",
       sessionDate: todayIso(),
+      selectedTaskIds: orderedSelectedIds,
     })
     .returning();
 
@@ -77,27 +87,6 @@ export async function completeChallengeTaskAction(input: {
         resultReps: input.resultReps,
         completedAt: new Date(),
       },
-    });
-
-  revalidatePath(`/challenge/${session.levelId}/live`);
-}
-
-/** Marks a task as seen-but-not-completed — it just doesn't count toward the minimum. */
-export async function skipChallengeTaskAction(input: { sessionId: string; taskId: string }) {
-  const user = await requireUser();
-  const [session] = await db
-    .select()
-    .from(challengeSessions)
-    .where(and(eq(challengeSessions.id, input.sessionId), eq(challengeSessions.userId, user.id)))
-    .limit(1);
-  if (!session || session.status !== "in_progress") return;
-
-  await db
-    .insert(challengeTaskResults)
-    .values({ sessionId: input.sessionId, taskId: input.taskId, completed: false })
-    .onConflictDoUpdate({
-      target: [challengeTaskResults.sessionId, challengeTaskResults.taskId],
-      set: { completed: false },
     });
 
   revalidatePath(`/challenge/${session.levelId}/live`);

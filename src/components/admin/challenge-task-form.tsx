@@ -7,9 +7,27 @@ import { toast } from "@/lib/toast-store";
 import { createChallengeTaskAction, updateChallengeTaskAction } from "@/app/admin/plans/challenge-actions";
 import type { ChallengeTask } from "@/db/schema";
 
-export function ChallengeTaskForm({ task, onSaved }: { task?: ChallengeTask; onSaved?: () => void }) {
+/** Values to prefill a brand-new challenge task with, e.g. lifted from an existing workout task. */
+export type ChallengeTaskPrefill = {
+  name: string;
+  note: string | null;
+  targetDistanceMeters: number | null;
+  rankDirection: "asc" | "desc";
+  resultKind: "time" | "reps";
+};
+
+export function ChallengeTaskForm({
+  task,
+  prefill,
+  onSaved,
+}: {
+  task?: ChallengeTask;
+  prefill?: ChallengeTaskPrefill;
+  onSaved?: () => void;
+}) {
   const action = task ? updateChallengeTaskAction : createChallengeTaskAction;
   const [state, formAction, pending] = useActionState(action, undefined);
+  const initial = task ?? prefill;
 
   useEffect(() => {
     if (state?.success) {
@@ -25,14 +43,14 @@ export function ChallengeTaskForm({ task, onSaved }: { task?: ChallengeTask; onS
 
       <label className="flex flex-col gap-1.5">
         <Label>Név</Label>
-        <Input name="name" defaultValue={task?.name} placeholder="pl. Sprint 400 m" required />
+        <Input name="name" defaultValue={initial?.name} placeholder="pl. Sprint 400 m" required />
       </label>
 
       <label className="flex flex-col gap-1.5">
         <Label>Leírás</Label>
         <Input
           name="note"
-          defaultValue={task?.note ?? ""}
+          defaultValue={initial?.note ?? ""}
           placeholder="Opcionális, pl. hogyan kell helyesen végezni"
         />
       </label>
@@ -44,14 +62,14 @@ export function ChallengeTaskForm({ task, onSaved }: { task?: ChallengeTask; onS
             name="targetDistanceMeters"
             type="number"
             min={1}
-            defaultValue={task?.targetDistanceMeters ?? ""}
+            defaultValue={initial?.targetDistanceMeters ?? ""}
           />
         </label>
         <label className="flex flex-1 flex-col gap-1.5">
           <Label>Eredmény típusa</Label>
           <select
             name="resultKind"
-            defaultValue={task?.resultKind ?? "time"}
+            defaultValue={initial?.resultKind ?? "time"}
             className="box-border w-full rounded-lg border border-border-strong bg-bg-inset px-3 py-3.5 text-sm text-text outline-none"
           >
             <option value="time">Idő</option>
@@ -64,7 +82,7 @@ export function ChallengeTaskForm({ task, onSaved }: { task?: ChallengeTask; onS
         <Label>Rangsorolás</Label>
         <select
           name="rankDirection"
-          defaultValue={task?.rankDirection ?? "asc"}
+          defaultValue={initial?.rankDirection ?? "asc"}
           className="box-border w-full rounded-lg border border-border-strong bg-bg-inset px-3.5 py-3.5 text-sm text-text outline-none"
         >
           <option value="asc">Minél kisebb, annál jobb (pl. sprint idő)</option>
