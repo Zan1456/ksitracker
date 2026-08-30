@@ -256,14 +256,6 @@ export function ChallengeFocusSession({
     });
   }
 
-  function handleSkip() {
-    const skippedTask = task!;
-    startTransition(async () => {
-      await skipChallengeTaskAction({ sessionId, taskId: skippedTask.id });
-      advance();
-    });
-  }
-
   function quit() {
     if (!confirm("Biztosan megszakítod a challenge-t? A haladásod nem lesz kész.")) return;
     toast("Challenge megszakítva", "info");
