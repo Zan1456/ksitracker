@@ -99,18 +99,6 @@ function ChallengeTaskRunner({
     return () => clearInterval(interval);
   }, [isAmrap, swPhase]);
 
-  const skipButton = (
-    <button
-      onClick={() => {
-        playTransitionChime();
-        onSkip();
-      }}
-      className="text-[12.5px] text-text-faint"
-    >
-      Kihagyás
-    </button>
-  );
-
   if (phase === "awaiting-input") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-8 text-center">
@@ -134,7 +122,6 @@ function ChallengeTaskRunner({
         >
           Mentés és tovább
         </button>
-        {skipButton}
       </div>
     );
   }
@@ -216,8 +203,6 @@ function ChallengeTaskRunner({
           </button>
         </div>
       )}
-
-      {skipButton}
     </div>
   );
 }
@@ -225,16 +210,14 @@ function ChallengeTaskRunner({
 export function ChallengeFocusSession({
   sessionId,
   levelIndex,
-  minRequired,
   tasks,
   visitedTaskIds,
   initialCompletedTaskIds,
 }: {
   sessionId: string;
   levelIndex: number;
-  minRequired: number;
   tasks: ChallengeLiveTask[];
-  /** Tasks that already have a result row (completed or skipped) — used to resume. */
+  /** Tasks that already have a result row — used to resume mid-session. */
   visitedTaskIds: string[];
   initialCompletedTaskIds: string[];
 }) {
