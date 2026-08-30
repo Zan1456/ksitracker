@@ -189,6 +189,116 @@ export default async function HomePage() {
         <LevelList levels={levels} dailyLimitAllowed={limit.canStartNew} challengeLimitAllowed={challengeLimit.canStartNew} />
       </PageTransition>
 
+      {/* Tablet body — hero + szintek/ring side by side, recent workouts full-width below. */}
+      <div className="hidden flex-1 flex-col gap-5 overflow-y-auto px-6 py-5 md:flex xl:hidden">
+        <div className="flex items-center gap-6 rounded-[14px] border border-border-strong bg-bg-elevated p-6">
+          <div className="flex-1">
+            <div className="mono mb-3 text-[10.5px] tracking-[0.08em] text-accent">
+              {next ? `${nextIsChallenge ? "CHALLENGE" : "MAI EDZÉS"} · SZINT ${next.level.index}` : "MINDEN SZINT TELJESÍTVE"}
+            </div>
+            <div className="mb-2 text-[24px] font-medium tracking-[-0.03em]">
+              {next ? (nextIsChallenge ? "Challenge" : next.workout.name) : "Gratulálunk!"}
+            </div>
+            {next && !nextIsChallenge && (
+              <div className="text-[13.5px] text-text-muted">
+                {next.workout.taskCount} feladat · ~{next.workout.estimatedMinutes} perc
+              </div>
+            )}
+          </div>
+          {showNextAction &&
+            (nextBlocked ? (
+              <Button size="lg" disabled>
+                Holnap
+              </Button>
+            ) : (
+              <Link href={nextIsChallenge ? `/challenge/${next!.level.id}` : `/workout/${next!.workout.id}`}>
+                <Button size="lg">{nextIsChallenge ? "Challenge indítása" : "Edzés indítása"}</Button>
+              </Link>
+            ))}
+        </div>
+
+        <div className="flex gap-5">
+          <div className="flex flex-1 flex-col gap-2.5">
+            <div className="mono text-[10.5px] tracking-[0.08em] text-text-faint">SZINTEK</div>
+            {levels.map((level) => {
+              const levelPct = level.totalCount > 0 ? level.doneCount / level.totalCount : 0;
+              const levelDone = level.totalCount > 0 && level.doneCount === level.totalCount && level.challengePassed;
+              return (
+                <div
+                  key={level.id}
+                  className="rounded-[12px] border border-border bg-bg-inset p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[13.5px] font-medium">
+                      Szint {level.index} · {level.name}
+                    </span>
+                    <span
+                      className={cn(
+                        "mono text-[10.5px]",
+                        level.locked ? "text-text-faint" : levelDone ? "text-success" : "text-accent"
+                      )}
+                    >
+                      {level.locked ? "ZÁROLT" : `${level.doneCount}/${level.totalCount} KÉSZ`}
+                    </span>
+                  </div>
+                  <span className="block h-1.5 overflow-hidden rounded-full bg-border">
+                    <span
+                      className={cn(
+                        "block h-1.5 rounded-full",
+                        level.locked ? "bg-text-faint" : levelDone ? "bg-success" : "bg-accent"
+                      )}
+                      style={{ width: `${levelPct * 100}%` }}
+                    />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex w-[270px] shrink-0 flex-col items-center gap-3.5 rounded-[12px] border border-border bg-bg-inset p-5">
+            <div className="relative" style={{ width: 150, height: 150 }}>
+              <Ring fraction={pct} color="var(--color-accent)" size={150} strokeWidth={4} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                <div className="mono text-[28px] font-medium leading-none tracking-[-0.03em]">
+                  {Math.round(pct * 100)}
+                  <span className="text-[13px] text-text-faint">%</span>
+                </div>
+                <div className="mono text-[10px] text-text-faint">
+                  {doneWorkouts} / {totalWorkouts} EDZÉS
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-[14px] font-medium">Teljes terv</div>
+              <div className="mono mt-1.5 text-[10.5px] text-text-faint">
+                {totalWorkouts - doneWorkouts} EDZÉS VAN HÁTRA
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[11px] border border-border bg-bg-inset p-4.5">
+          <div className="mono mb-1 text-[10.5px] tracking-[0.08em] text-text-faint">LEGUTÓBBI EDZÉSEK</div>
+          {recentHistory.length === 0 ? (
+            <p className="pt-2.5 text-[12.5px] text-text-muted">Még nincs teljesített edzésed.</p>
+          ) : (
+            recentHistory.map((h) => (
+              <div
+                key={h.sessionId}
+                className="flex items-center gap-3.5 border-t border-border py-2.75 first:border-t-0"
+              >
+                <span className="text-[11px] font-medium text-success">✓</span>
+                <span className="flex-1 truncate text-[13px]">{h.workoutName}</span>
+                <span className="mono text-[11px] text-text-faint">{relativeDayLabel(h.sessionDate)}</span>
+                <span className="mono w-14 shrink-0 text-right text-[11px] text-text-secondary">
+                  {h.totalSeconds != null ? formatSeconds(h.totalSeconds) : "—"}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Desktop body — hero + level progress + recent workouts, with an overview rail on the right. */}
       <div className="hidden flex-1 gap-6 overflow-y-auto px-7 py-6 xl:flex">
         <div className="flex flex-1 flex-col gap-4.5">
