@@ -353,7 +353,10 @@ export default async function LeaderboardPage({
         </>
       )}
 
-      <BottomNav variant="user" />
+      {/* TopTabs already covers the tablet band on this page. */}
+      <div className="md:hidden">
+        <BottomNav variant="user" />
+      </div>
     </AppShell>
   );
 }

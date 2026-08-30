@@ -438,7 +438,10 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <BottomNav variant="user" />
+      {/* TopTabs already covers the tablet band on this page. */}
+      <div className="md:hidden">
+        <BottomNav variant="user" />
+      </div>
     </AppShell>
   );
 }

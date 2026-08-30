@@ -14,7 +14,7 @@ export function BottomNav({ variant = "user" }: { variant?: NavVariant }) {
   const layoutGroup = variant === "admin" ? "admin-nav" : "user-nav";
 
   return (
-    <nav className="glass sticky bottom-0 z-10 mt-auto flex border-t md:hidden">
+    <nav className="glass sticky bottom-0 z-10 mt-auto flex border-t xl:hidden">
       {items.map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
