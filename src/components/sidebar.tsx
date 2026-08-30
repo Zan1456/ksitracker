@@ -10,10 +10,11 @@ import { IconLogout } from "@/components/icons";
 import { signOutAction } from "@/lib/auth-actions";
 
 /**
- * Desktop-only counterpart to `BottomNav`: a persistent left rail instead of
- * a bottom bar. Both stay mounted (`BottomNav` hides via `md:hidden`, this
- * via `md:flex` below `hidden`) rather than swapping components at the
- * breakpoint, so navigation never flashes/reflows while the layout settles.
+ * Real-desktop-only counterpart to `BottomNav`: a persistent left rail
+ * instead of a bottom bar. Shows at `xl+` (the tablet band in between uses
+ * `TopTabs` instead) — all three stay mounted rather than swapping
+ * components at the breakpoint, so navigation never flashes/reflows while
+ * the layout settles.
  */
 export function Sidebar({ variant = "user" }: { variant?: NavVariant }) {
   const pathname = usePathname();
@@ -21,7 +22,7 @@ export function Sidebar({ variant = "user" }: { variant?: NavVariant }) {
   const layoutGroup = variant === "admin" ? "admin-sidebar-nav" : "user-sidebar-nav";
 
   return (
-    <aside className="glass sticky top-0 hidden h-screen w-56 shrink-0 flex-col gap-1 border-r px-3 py-5 md:flex">
+    <aside className="glass sticky top-0 hidden h-screen w-56 shrink-0 flex-col gap-1 border-r px-3 py-5 xl:flex">
       <div className="mb-6 px-2.5">
         <BrandMark />
         {variant === "admin" && (

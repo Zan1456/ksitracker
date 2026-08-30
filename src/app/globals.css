@@ -19,8 +19,13 @@
   --color-warning-bg: #fbf1dd;
   --color-warning-border: #edd9a3;
 
-  --color-accent: #2a78d6;
-  --color-accent-strong: #3d6fd1;
+  /* Repline brand accent — dark, contrast-safe olive-lime on a light page
+     (the mockup's bright lime only specs the dark theme; this is the light
+     equivalent, same hue family). --color-accent-fg is the text/icon color
+     drawn on top of an accent-filled surface (primary buttons). */
+  --color-accent: #5c7a1e;
+  --color-accent-strong: #4c6819;
+  --color-accent-fg: #ffffff;
 
   --color-danger: #c23b3b;
   --color-danger-bg: #fbeaea;
@@ -36,26 +41,30 @@
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #0a0a0a;
-  --color-bg-elevated: #0d0d0d;
-  --color-bg-inset: #0f0f0f;
-  --color-border: #1c1c1c;
-  --color-border-strong: #2a2a2a;
-  --color-text: #fafafa;
-  --color-text-secondary: #a1a1a1;
-  --color-text-muted: #8f8f8f;
-  --color-text-faint: #6b6b6b;
+  --color-bg: #0a0b0c;
+  --color-bg-elevated: #121315;
+  --color-bg-inset: #171a1d;
+  --color-border: #23262b;
+  --color-border-strong: #2e3238;
+  --color-text: #f4f5f6;
+  --color-text-secondary: #c6cbd1;
+  --color-text-muted: #8c929b;
+  --color-text-faint: #5e646c;
 
-  --color-success: #5fd184;
-  --color-success-bg: #16311f;
-  --color-success-border: #1f4a2e;
+  --color-success: #67d48a;
+  --color-success-bg: #16301f;
+  --color-success-border: #2b3d24;
 
   --color-warning: #f2c75c;
   --color-warning-bg: #141007;
   --color-warning-border: #4a3f1c;
 
-  --color-accent: #2a78d6;
-  --color-accent-strong: #3d6fd1;
+  /* Repline brand accent — the mockup's lime, used for primary CTAs, focus
+     rings and active/in-progress highlights. --color-accent-fg is the
+     text/icon color drawn on top of an accent-filled surface. */
+  --color-accent: #bef264;
+  --color-accent-strong: #cbf77a;
+  --color-accent-fg: #0a0b0c;
 
   --color-danger: #e58b8b;
   --color-danger-bg: #170f0f;
@@ -84,6 +93,7 @@
   --color-warning-border: var(--color-warning-border);
   --color-accent: var(--color-accent);
   --color-accent-strong: var(--color-accent-strong);
+  --color-accent-fg: var(--color-accent-fg);
   --color-danger: var(--color-danger);
   --color-danger-bg: var(--color-danger-bg);
   --color-danger-border: var(--color-danger-border);
@@ -109,7 +119,7 @@ body {
 
 ::selection {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-accent-fg);
 }
 
 input,

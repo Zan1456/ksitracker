@@ -6,10 +6,13 @@ import type { NavVariant } from "@/lib/nav-items";
 export { BrandMark } from "@/components/brand-mark";
 
 /**
- * On mobile this is just the familiar single "phone card" column. At `md+`
- * it grows into a real desktop layout: a persistent sidebar rail (when `nav`
- * is given) plus a wider content column, instead of the phone card sitting
- * letterboxed in the middle of the screen.
+ * Three layers in one tree (no component swap at the breakpoint, so nothing
+ * flashes/reflows while the layout settles):
+ * - `<md` (telefon): the familiar single "phone card" column, `BottomNav`.
+ * - `md`–`<xl` (tablet): a wider column with `TopTabs` inside each page's
+ *   own header, no side rail.
+ * - `xl+` (gép): the persistent `Sidebar` rail (when `nav` is given) next to
+ *   the content column.
  *
  * `wide` lifts the column's cap further at `xl+`, for pages with a bespoke
  * multi-column desktop layout of their own (e.g. the homepage's hero +
@@ -31,7 +34,7 @@ export function AppShell({
         className={cn(
           "flex w-full max-w-[520px] flex-1 flex-col border-border md:max-w-[640px]",
           wide && "xl:max-w-[1180px]",
-          nav ? "md:border-r" : "md:border-x"
+          nav ? "xl:border-r" : "xl:border-x"
         )}
       >
         {children}

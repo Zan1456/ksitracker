@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/cn";
 import { AppShell, BrandMark } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
+import { TopTabs } from "@/components/top-tabs";
 import { Avatar } from "@/components/avatar";
 import { Ring } from "@/components/ring";
 import { Button } from "@/components/ui/button";
@@ -80,12 +81,32 @@ export default async function HomePage() {
 
   return (
     <AppShell nav="user" wide>
-      {/* Mobile/tablet header — the desktop layout below `xl` is just this single-column card. */}
-      <div className="glass sticky top-0 z-10 flex items-center justify-between border-b px-5 py-3.5 xl:hidden">
+      {/* Phone header. */}
+      <div className="glass sticky top-0 z-10 flex items-center justify-between border-b px-5 py-3.5 md:hidden">
         <BrandMark />
         <Link href="/profile">
           <Avatar name={user.name ?? "?"} size={28} />
         </Link>
+      </div>
+
+      {/* Tablet header — brand + avatar row, then the tab nav, then the greeting. */}
+      <div className="glass sticky top-0 z-10 hidden flex-col gap-3.5 border-b px-6 pb-3.5 pt-4 md:flex xl:hidden">
+        <div className="flex items-center justify-between">
+          <BrandMark />
+          <div className="flex items-center gap-2.5">
+            <ThemeToggleButton />
+            <Link href="/profile">
+              <Avatar name={user.name ?? "?"} size={30} />
+            </Link>
+          </div>
+        </div>
+        <TopTabs variant="user" />
+        <div>
+          <div className="text-[19px] font-medium tracking-[-0.02em]">Szia, {firstName}</div>
+          <div className="mono mt-2 text-[11px] text-text-faint">
+            {todayLabel} · {statusLabel}
+          </div>
+        </div>
       </div>
 
       {/* Desktop header — the sidebar already carries the brand, so this is just the greeting + day actions. */}
@@ -107,11 +128,11 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Mobile/tablet body */}
-      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-6 xl:hidden">
+      {/* Phone body */}
+      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-6 md:hidden">
         <div className="flex flex-col items-center gap-4 pb-1 text-center">
           <div className="relative" style={{ width: 168, height: 168 }}>
-            <Ring fraction={pct} color="var(--color-text)" size={168} strokeWidth={4} />
+            <Ring fraction={pct} color="var(--color-accent)" size={168} strokeWidth={4} />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
               <div className="mono text-[34px] font-medium leading-none tracking-[-0.03em]">
                 {Math.round(pct * 100)}
@@ -173,7 +194,7 @@ export default async function HomePage() {
         <div className="flex flex-1 flex-col gap-4.5">
           <div className="flex items-center gap-7 rounded-[14px] border border-border-strong bg-bg-elevated p-6.5">
             <div className="flex-1">
-              <div className="mono mb-3.5 text-[10.5px] tracking-[0.08em] text-warning">
+              <div className="mono mb-3.5 text-[10.5px] tracking-[0.08em] text-accent">
                 {next ? `${nextIsChallenge ? "CHALLENGE" : "MAI EDZÉS"} · SZINT ${next.level.index}` : "MINDEN SZINT TELJESÍTVE"}
               </div>
               <div className="mb-2 text-[26px] font-medium tracking-[-0.03em]">
@@ -212,7 +233,7 @@ export default async function HomePage() {
                     <span
                       className={cn(
                         "block h-1.5 rounded-full",
-                        level.locked ? "bg-text-faint" : levelDone ? "bg-success" : "bg-warning"
+                        level.locked ? "bg-text-faint" : levelDone ? "bg-success" : "bg-accent"
                       )}
                       style={{ width: `${levelPct * 100}%` }}
                     />
@@ -220,7 +241,7 @@ export default async function HomePage() {
                   <span
                     className={cn(
                       "mono w-24 shrink-0 text-right text-[11px]",
-                      level.locked ? "text-text-faint" : levelDone ? "text-success" : "text-warning"
+                      level.locked ? "text-text-faint" : levelDone ? "text-success" : "text-accent"
                     )}
                   >
                     {level.locked ? "ZÁROLT" : `${level.doneCount}/${level.totalCount} KÉSZ`}
@@ -255,7 +276,7 @@ export default async function HomePage() {
         <div className="flex w-[290px] shrink-0 flex-col gap-3.5">
           <div className="flex flex-col items-center gap-3.5 rounded-[12px] border border-border bg-bg-inset p-5">
             <div className="relative" style={{ width: 150, height: 150 }}>
-              <Ring fraction={pct} color="var(--color-text)" size={150} strokeWidth={4} />
+              <Ring fraction={pct} color="var(--color-accent)" size={150} strokeWidth={4} />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
                 <div className="mono text-[28px] font-medium leading-none tracking-[-0.03em]">
                   {Math.round(pct * 100)}
