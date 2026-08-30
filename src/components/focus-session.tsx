@@ -533,7 +533,7 @@ export function FocusSession({
 
   return (
     <div className="flex min-h-screen w-full xl:justify-center">
-    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col xl:mx-0 xl:max-w-[640px]">
+    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col md:max-w-[640px] xl:mx-0">
       <div className="flex items-center justify-between px-5 pb-2.5 pt-3.5">
         <button
           onClick={quit}
@@ -554,7 +554,7 @@ export function FocusSession({
           onClick={() => setShowAllTasks((v) => !v)}
           aria-label="Feladatlista"
           aria-expanded={showAllTasks}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-[15px] text-text-muted"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-[15px] text-text-muted md:invisible md:pointer-events-none"
         >
           ⋯
         </button>
@@ -579,7 +579,7 @@ export function FocusSession({
       />
 
       {nextTask ? (
-        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4 xl:hidden">
+        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4 md:hidden">
           <span className="mono flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-border-strong bg-bg-elevated text-[11px] text-text-faint">
             {index + 2}
           </span>
@@ -590,17 +590,28 @@ export function FocusSession({
           <span className="mono shrink-0 text-[11px] text-text-faint">{footerValue(nextTask)}</span>
         </div>
       ) : (
-        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint xl:hidden">
+        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint md:hidden">
           Utolsó feladat
         </div>
       )}
 
       {showAllTasks && (
-        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4 xl:hidden">
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4 md:hidden">
           <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
           <TaskListRows tasks={tasks} index={index} />
         </div>
       )}
+
+      {/* Tablet task list — always visible below the timer, no toggle needed. */}
+      <div className="hidden flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-6 pb-5 pt-4 md:flex xl:hidden">
+        <div className="mono mb-0.5 flex items-center justify-between text-[10.5px] text-text-faint">
+          <span>FELADATOK</span>
+          <span>
+            ELTELT {formatSeconds(elapsedTotalMs / 1000)} · {tasks.length - index} FELADAT HÁTRA
+          </span>
+        </div>
+        <TaskListRows tasks={tasks} index={index} />
+      </div>
     </div>
 
     {/* Desktop task panel — always visible, no toggle needed at this width. */}

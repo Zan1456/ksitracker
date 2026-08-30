@@ -9,6 +9,7 @@ import {
 import { formatMs } from "@/lib/format";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
+import { TopTabs } from "@/components/top-tabs";
 import { Avatar } from "@/components/avatar";
 import { CategorySelect } from "@/components/category-select";
 import { PageTransition } from "@/components/motion/page-transition";
@@ -51,7 +52,7 @@ export default async function LeaderboardPage({
 
   return (
     <AppShell nav="user" wide>
-      <div className="glass sticky top-0 z-10 border-b px-5 pb-3.5 pt-4 xl:hidden">
+      <div className="glass sticky top-0 z-10 border-b px-5 pb-3.5 pt-4 md:hidden">
         <h1 className="mb-3.5 text-[22px] font-medium leading-[1.2] tracking-[-0.03em]">Ranglista</h1>
 
         {categories.length > 0 && selected && (
@@ -73,6 +74,30 @@ export default async function LeaderboardPage({
             </div>
           </>
         )}
+      </div>
+
+      {/* Tablet header — tab nav, title + scope tabs; the task selector is a horizontal strip in the body. */}
+      <div className="glass sticky top-0 z-10 hidden flex-col gap-3.5 border-b px-6 pb-3.5 pt-4 md:flex xl:hidden">
+        <TopTabs variant="user" />
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-[21px] font-medium tracking-[-0.02em]">Ranglista</h1>
+          {selected && (
+            <div className="flex gap-2">
+              {scopeTabs.map(([key, label]) => (
+                <Link
+                  key={key}
+                  href={`/leaderboard?cat=${encodeURIComponent(selected)}&scope=${key}`}
+                  className={cn(
+                    "rounded-[8px] border px-3.25 py-2 text-[12.5px] font-medium",
+                    scope === key ? "border-border-strong bg-bg-inset text-text" : "border-transparent text-text-muted"
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {categories.length === 0 || !selected || !category ? (
