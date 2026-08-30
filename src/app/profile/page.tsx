@@ -13,6 +13,7 @@ import { getLeaderboardCategories, getLeaderboard } from "@/lib/leaderboard";
 import { formatHoursMinutes, formatSeconds, formatMs, formatDateHu, todayIso, isoDaysAgo } from "@/lib/format";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
+import { TopTabs } from "@/components/top-tabs";
 import { Avatar } from "@/components/avatar";
 import { ThemeToggle, ThemeToggleButton } from "@/components/theme-toggle";
 import { PageTransition } from "@/components/motion/page-transition";
@@ -65,8 +66,8 @@ export default async function ProfilePage() {
 
   return (
     <AppShell nav="user" wide>
-      {/* Mobile/tablet body */}
-      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-5 xl:hidden">
+      {/* Phone body */}
+      <PageTransition className="gap-5 overflow-y-auto px-5 pb-6 pt-5 md:hidden">
         <div className="flex items-center gap-3.5">
           <Avatar name={user.name ?? "?"} size={52} />
           <div className="flex-1">
