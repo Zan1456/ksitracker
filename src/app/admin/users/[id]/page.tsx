@@ -196,6 +196,126 @@ export default async function AdminUserDetailPage({
         </div>
       </PageTransition>
 
+      {/* Tablet body — stat grid + full-width level progress, then best times
+          and daily limit split side by side at the bottom (no room for the
+          activity list too at this width). */}
+      <div className="hidden flex-1 flex-col gap-4.5 overflow-y-auto px-6 py-5 md:flex xl:hidden">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <Avatar name={user.name} size={44} />
+            <div>
+              <div className="text-[17px] font-medium tracking-[-0.02em]">{user.name}</div>
+              <div className="mono mt-1.5 text-[10.5px] text-text-faint">
+                {user.email.toUpperCase()} · {user.isBanned ? "TILTVA" : "AKTÍV"} · CSATLAKOZOTT{" "}
+                {formatDateHu(user.createdAt.toISOString().slice(0, 10))}
+              </div>
+            </div>
+          </div>
+          <form action={toggleBanAction.bind(null, user.id, !user.isBanned)}>
+            <button
+              type="submit"
+              className={cn(
+                "shrink-0 rounded-[8px] border px-3.25 py-2 text-[12.5px] font-medium",
+                user.isBanned ? "border-border-strong text-text-secondary" : "border-danger-border text-danger"
+              )}
+            >
+              {user.isBanned ? "Tiltás feloldása" : "Fiók letiltása"}
+            </button>
+          </form>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2.5">
+          <div className="rounded-[11px] border border-border bg-bg-inset p-4">
+            <div className="mono text-[19px] font-medium tracking-[-0.02em]">{overallPct}%</div>
+            <div className="mono mt-2 text-[10px] text-text-faint">TELJES HALADÁS</div>
+          </div>
+          <div className="rounded-[11px] border border-border bg-bg-inset p-4">
+            <div className="mono text-[19px] font-medium tracking-[-0.02em]">
+              {doneCount} / {totalCount}
+            </div>
+            <div className="mono mt-2 text-[10px] text-text-faint">EDZÉS KÉSZ</div>
+          </div>
+          <div className="rounded-[11px] border border-border bg-bg-inset p-4">
+            <div className="mono text-[19px] font-medium tracking-[-0.02em]">{streakDays}</div>
+            <div className="mono mt-2 text-[10px] text-text-faint">NAPOS SOROZAT</div>
+          </div>
+          <div className="rounded-[11px] border border-border bg-bg-inset p-4">
+            <div className="mono text-[19px] font-medium tracking-[-0.02em]">
+              {formatHoursMinutes(Math.round(totalStats.totalSeconds / 60))}
+            </div>
+            <div className="mono mt-2 text-[10px] text-text-faint">ÖSSZ. ÓRA</div>
+          </div>
+        </div>
+
+        <EditUserPanel user={user} isSelf={admin.id === user.id} />
+
+        <div className="flex flex-col gap-3.5 rounded-[12px] border border-border bg-bg-inset p-5">
+          <span className="mono text-[10.5px] tracking-[0.08em] text-text-faint">SZINTENKÉNTI KÉSZÜLTSÉG</span>
+          {levelsProgress.map((l) => {
+            const lPct = l.totalCount > 0 ? l.doneCount / l.totalCount : 0;
+            const lDone = l.totalCount > 0 && l.doneCount === l.totalCount;
+            const lMinutes = Math.round(l.workouts.reduce((s, w) => s + (w.bestSeconds ?? 0), 0) / 60);
+            return (
+              <div key={l.id} className="rounded-[10px] border border-border bg-bg-elevated p-4">
+                <div className="mb-2.75 flex items-center justify-between">
+                  <span className="text-[13px] font-medium">
+                    Szint {l.index} · {l.name}
+                  </span>
+                  <span className="mono text-[10.5px] text-text-faint">
+                    {l.locked ? "ZÁROLT · —" : `${l.doneCount}/${l.totalCount} EDZÉS · ${formatHoursMinutes(lMinutes)} Ó`}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                  <div
+                    className={cn("h-1.5 rounded-full", l.locked ? "bg-text-faint" : lDone ? "bg-success" : "bg-accent")}
+                    style={{ width: `${lPct * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-4">
+          <div className="flex-1 rounded-[12px] border border-border bg-bg-inset p-4.5">
+            <div className="mono mb-1 text-[10.5px] tracking-[0.08em] text-text-faint">LEGJOBB IDŐK</div>
+            {bestTimes.length === 0 ? (
+              <p className="py-3 text-[12.5px] text-text-muted">Nincs rögzített stopperes eredmény.</p>
+            ) : (
+              bestTimes.map(({ category, row }) => (
+                <div key={category.name} className="flex items-center gap-2.5 border-t border-border py-2.75">
+                  <span className="flex-1 text-[12.5px] text-text-secondary">{category.name}</span>
+                  <span className="mono text-[13px]">
+                    {row ? (category.resultKind === "time" ? formatMs(row.value) : `${row.value} ISM`) : "—"}
+                  </span>
+                  <span className="mono w-6 text-right text-[10.5px] text-text-faint">
+                    {row ? `${row.rank}.` : ""}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex-1 rounded-[12px] border border-border bg-bg-inset p-4.5">
+            <div className="mono mb-3.5 text-[10.5px] tracking-[0.08em] text-text-faint">NAPI LIMIT</div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12.5px] text-text-secondary">
+                {hasBonusToday ? "Ma extra edzés is indítható" : "A szokásos napi 1 edzésre korlátozva"}
+              </span>
+              <form action={resetDailyLimitAction.bind(null, user.id)}>
+                <button
+                  type="submit"
+                  disabled={hasBonusToday}
+                  className="shrink-0 rounded-[8px] border border-border-strong px-3.25 py-2 text-[12px] font-medium text-text-secondary disabled:opacity-50"
+                >
+                  {hasBonusToday ? "Feloldva" : "Feloldás"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Desktop body */}
       <div className="hidden flex-1 gap-6 overflow-y-auto px-7 py-6 xl:flex">
         <div className="flex flex-1 flex-col gap-4.5">
