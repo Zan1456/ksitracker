@@ -14,7 +14,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen w-full">
-      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10 lg:mx-0 lg:max-w-none lg:flex-none lg:basis-1/2 lg:px-24 xl:px-32">
+      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10 xl:mx-0 xl:max-w-none xl:flex-none xl:basis-1/2 xl:px-24 2xl:px-32">
         <div className="mb-9">
           <BrandMark />
         </div>
@@ -56,8 +56,8 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* Desktop-only marketing panel — the mobile/tablet layout above is the whole page below `lg`. */}
-      <div className="hidden flex-1 flex-col justify-center gap-7 border-l border-border bg-bg-inset px-20 lg:flex">
+      {/* Gép-only marketing panel — telefonon/tableten a fenti kártya jeleníti meg ugyanezt a tartalmat. */}
+      <div className="hidden flex-1 flex-col justify-center gap-7 border-l border-border bg-bg-inset px-20 xl:flex">
         <div className="mono text-[10.5px] tracking-[0.08em] text-text-faint">HETI RITMUS</div>
         <div>
           <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">

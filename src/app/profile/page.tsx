@@ -56,9 +56,10 @@ export default async function ProfilePage() {
       return {
         name: c.name,
         value: c.resultKind === "time" ? formatMs(row.value) : `${row.value} ISM`,
+        rank: row.rank,
       };
     })
-    .filter((x): x is { name: string; value: string } => x !== null);
+    .filter((x): x is { name: string; value: string; rank: number } => x !== null);
 
   const joinedLabel = joined[0]?.createdAt
     ? formatDateHu(joined[0].createdAt.toISOString().slice(0, 10))
@@ -117,6 +118,40 @@ export default async function ProfilePage() {
                 style={d.done ? { opacity: 0.85 } : undefined}
               />
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-[10px] border border-border p-4">
+          <div className="mb-3.5 text-[13px] font-medium">Szintek</div>
+          <div className="flex flex-col gap-3.5">
+            {levels.map((level) => {
+              const levelPct = level.totalCount > 0 ? level.doneCount / level.totalCount : 0;
+              const levelDone = level.totalCount > 0 && level.doneCount === level.totalCount;
+              return (
+                <div key={level.id}>
+                  <div className="mb-2 flex justify-between">
+                    <span className="text-[12.5px] font-medium">Szint {level.index}</span>
+                    <span
+                      className={cn(
+                        "mono text-[11px]",
+                        level.locked ? "text-text-faint" : levelDone ? "text-success" : "text-accent"
+                      )}
+                    >
+                      {level.doneCount}/{level.totalCount}
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                    <div
+                      className={cn(
+                        "h-1.5 rounded-full",
+                        level.locked ? "bg-text-faint" : levelDone ? "bg-success" : "bg-accent"
+                      )}
+                      style={{ width: `${levelPct * 100}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -279,9 +314,10 @@ export default async function ProfilePage() {
               <p className="py-3 text-[12.5px] text-text-muted">Még nincs rögzített eredményed.</p>
             ) : (
               personalBests.map((b) => (
-                <div key={b.name} className="flex justify-between border-t border-border py-2.5">
-                  <span className="text-[12.5px] text-text-secondary">{b.name}</span>
+                <div key={b.name} className="flex items-center gap-3 border-t border-border py-2.5">
+                  <span className="flex-1 text-[12.5px] text-text-secondary">{b.name}</span>
                   <span className="mono text-[13px]">{b.value}</span>
+                  <span className="mono w-7 text-right text-[10.5px] text-text-faint">{b.rank}.</span>
                 </div>
               ))
             )}
@@ -413,9 +449,10 @@ export default async function ProfilePage() {
                 <p className="py-3 text-[12.5px] text-text-muted">Még nincs rögzített eredményed.</p>
               ) : (
                 personalBests.map((b) => (
-                  <div key={b.name} className="flex justify-between border-t border-border py-2.5">
-                    <span className="text-[12.5px] text-text-secondary">{b.name}</span>
+                  <div key={b.name} className="flex items-center gap-3 border-t border-border py-2.5">
+                    <span className="flex-1 text-[12.5px] text-text-secondary">{b.name}</span>
                     <span className="mono text-[13px]">{b.value}</span>
+                    <span className="mono w-7 text-right text-[10.5px] text-text-faint">{b.rank}.</span>
                   </div>
                 ))
               )}

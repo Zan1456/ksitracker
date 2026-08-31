@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { getAdminUserList, isInactive } from "@/lib/admin-data";
+import { isoDaysAgo } from "@/lib/format";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { AdminUserList } from "@/components/admin-user-list";
@@ -11,6 +12,8 @@ export default async function AdminUsersPage() {
   const rows = await getAdminUserList();
   const withInactive = rows.map((r) => ({ ...r, inactive: isInactive(r) }));
   const activeCount = withInactive.filter((r) => !r.inactive).length;
+  const last7 = isoDaysAgo(7);
+  const newThisWeek = withInactive.filter((r) => r.createdAt >= last7).length;
 
   return (
     <AppShell nav="admin" wide>
@@ -20,8 +23,8 @@ export default async function AdminUsersPage() {
           <span className="mono rounded-[5px] border border-border-strong px-1.5 py-1 text-[10px] text-text-secondary xl:hidden">
             ADMIN
           </span>
-          <div className="mono mt-2 hidden text-[11px] text-text-faint xl:block">
-            {rows.length} FIÓK · {activeCount} AKTÍV
+          <div className="mono mt-2 text-[11px] text-text-faint">
+            {activeCount} AKTÍV FIÓK · {newThisWeek} ÚJ EZEN A HÉTEN
           </div>
         </div>
         <Link

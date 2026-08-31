@@ -7,7 +7,7 @@ import { formatMs, formatDateHu, formatHoursMinutes, relativeDayLabel } from "@/
 import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
-import { IconArrowLeft, IconCheck } from "@/components/icons";
+import { IconArrowLeft } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { PageTransition } from "@/components/motion/page-transition";
 import { EditUserPanel } from "@/components/admin/edit-user-panel";
@@ -123,32 +123,29 @@ export default async function AdminUserDetailPage({
 
         <div className="flex flex-col gap-2">
           <div className="mono text-[10.5px] text-text-faint">SZINTENKÉNTI KÉSZÜLTSÉG</div>
-          {levelsProgress.map((l) => (
-            <div
-              key={l.id}
-              className={cn(
-                "flex items-center gap-2.75 rounded-[9px] border border-border bg-bg-elevated px-3.25 py-2.75",
-                l.locked && "opacity-60"
-              )}
-            >
-              <span className="flex-1 text-[12.5px] font-medium">
-                Szint {l.index} · {l.name}
-              </span>
-              <span className="flex gap-1">
-                {l.workouts.map((w) => (
-                  <span
-                    key={w.id}
-                    className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-[4px] text-[9px] font-medium",
-                      w.done ? "bg-success-bg text-success" : "bg-bg-inset"
-                    )}
-                  >
-                    {w.done && <IconCheck width={9} height={9} strokeWidth={3} />}
+          {levelsProgress.map((l) => {
+            const lPct = l.totalCount > 0 ? l.doneCount / l.totalCount : 0;
+            const lDone = l.totalCount > 0 && l.doneCount === l.totalCount;
+            const lMinutes = Math.round(l.workouts.reduce((s, w) => s + (w.bestSeconds ?? 0), 0) / 60);
+            return (
+              <div key={l.id} className="rounded-[10px] border border-border bg-bg-elevated p-3.25">
+                <div className="mb-2.75 flex items-center justify-between">
+                  <span className="text-[13px] font-medium">
+                    Szint {l.index} · {l.name}
                   </span>
-                ))}
-              </span>
-            </div>
-          ))}
+                  <span className="mono text-[10.5px] text-text-faint">
+                    {l.locked ? "ZÁROLT · —" : `${l.doneCount}/${l.totalCount} EDZÉS · ${formatHoursMinutes(lMinutes)} Ó`}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                  <div
+                    className={cn("h-1.5 rounded-full", l.locked ? "bg-text-faint" : lDone ? "bg-success" : "bg-accent")}
+                    style={{ width: `${lPct * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -243,7 +240,7 @@ export default async function AdminUserDetailPage({
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-border">
                     <div
-                      className={cn("h-1.5 rounded-full", l.locked ? "bg-text-faint" : lDone ? "bg-success" : "bg-warning")}
+                      className={cn("h-1.5 rounded-full", l.locked ? "bg-text-faint" : lDone ? "bg-success" : "bg-accent")}
                       style={{ width: `${lPct * 100}%` }}
                     />
                   </div>

@@ -15,6 +15,7 @@ export type AdminUserRow = {
   currentLevelIndex: number;
   lastActiveDate: string | null;
   daysInactive: number | null;
+  createdAt: string;
 };
 
 const INACTIVE_THRESHOLD_DAYS = 14;
@@ -72,6 +73,7 @@ export async function getAdminUserList(): Promise<AdminUserRow[]> {
       currentLevelIndex,
       lastActiveDate,
       daysInactive,
+      createdAt: u.createdAt.toISOString().slice(0, 10),
     };
   });
 }
