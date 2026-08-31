@@ -3,7 +3,7 @@ import { asc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { levels, workouts, workoutTasks } from "@/db/schema";
-import { AppShell, AppHeader } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { PageTransition } from "@/components/motion/page-transition";
 import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
@@ -21,28 +21,46 @@ export default async function AdminPlansPage() {
   ]);
 
   return (
-    <AppShell nav="admin">
-      <AppHeader
-        title="Edzéstervek"
-        right={
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/plans/challenge"
-              className="rounded-[7px] border border-border-strong px-2.75 py-2 text-[11.5px] font-medium text-text-secondary transition-transform active:scale-95"
-            >
-              Challenge
-            </Link>
-            <Link
-              href="/admin/plans/levels/new"
-              className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
-            >
-              + Új szint
-            </Link>
+    <AppShell nav="admin" wide>
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5 xl:px-7 xl:py-5">
+        <div>
+          <h1 className="text-[16px] font-medium tracking-[-0.02em] xl:text-[19px]">Edzéstervek</h1>
+          <div className="mono mt-2 text-[11px] text-text-faint">
+            {allLevels.length} SZINT · {allWorkouts.length} EDZÉS · {allTasks.length} FELADAT
           </div>
-        }
-      />
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/plans/challenge"
+            className="rounded-[7px] border border-border-strong px-2.75 py-2 text-[11.5px] font-medium text-text-secondary transition-transform active:scale-95"
+          >
+            Challenge
+          </Link>
+          <Link
+            href="/admin/plans/levels/new"
+            className="rounded-[7px] bg-text px-2.75 py-2 text-[11.5px] font-medium text-bg transition-transform active:scale-95"
+          >
+            + Új szint
+          </Link>
+        </div>
+      </div>
 
-      <PageTransition className="gap-5 overflow-y-auto px-5 py-4">
+      <div className="grid grid-cols-3 gap-2 px-5 pt-4 xl:gap-2.5 xl:px-7">
+        <div className="rounded-[12px] border border-border bg-bg-inset p-4">
+          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allWorkouts.length}</div>
+          <div className="mono mt-2.25 text-[10px] text-text-faint">EDZÉS</div>
+        </div>
+        <div className="rounded-[12px] border border-border bg-bg-inset p-4">
+          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allLevels.length}</div>
+          <div className="mono mt-2.25 text-[10px] text-text-faint">SZINT</div>
+        </div>
+        <div className="rounded-[12px] border border-border bg-bg-inset p-4">
+          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allTasks.length}</div>
+          <div className="mono mt-2.25 text-[10px] text-text-faint">FELADAT</div>
+        </div>
+      </div>
+
+      <PageTransition className="gap-5 overflow-y-auto px-5 py-4 xl:px-7">
         <StaggerContainer className="flex flex-col gap-5">
           {allLevels.map((level, li) => (
             <StaggerItem key={level.id}>
