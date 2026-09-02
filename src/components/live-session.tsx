@@ -15,7 +15,7 @@ export type LiveTask = {
   name: string;
   meta: string;
   /** Only workout tasks carry these — challenge tasks are always stopwatch-style. */
-  type?: "reps" | "time" | "stopwatch";
+  type?: "reps" | "time" | "stopwatch" | "rest";
   targetSeconds?: number | null;
   rounds?: number;
   roundsConfig?: { work: number; restSeconds: number | null }[] | null;
@@ -111,15 +111,22 @@ export function LiveSession({
   // the next round of the same task (a between-*round* rest).
   const restEndActionRef = useRef<"none" | "next-round">("none");
 
-  useEffect(() => {
+  // Reset round + countdown when the task changes, and re-arm the countdown
+  // when just the round changes within the same task — done during render
+  // (React's sanctioned way to adjust state in response to a prop/derived
+  // value change) rather than in an Effect, which would cost an extra
+  // render round-trip and trip the no-setState-in-effect lint rule.
+  const [prevTaskIdx, setPrevTaskIdx] = useState(taskIdx);
+  if (taskIdx !== prevTaskIdx) {
+    setPrevTaskIdx(taskIdx);
     setRoundIdx(0);
-  }, [taskIdx]);
-
-  useEffect(() => {
-    if (!task || task.type !== "time") return;
-    setRemainingMs(roundTargetSeconds(task, roundIdx) * 1000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskIdx, roundIdx]);
+    setRemainingMs(timedTask ? roundTargetSeconds(timedTask, 0) * 1000 : 0);
+  }
+  const [prevRoundIdx, setPrevRoundIdx] = useState(roundIdx);
+  if (roundIdx !== prevRoundIdx) {
+    setPrevRoundIdx(roundIdx);
+    setRemainingMs(timedTask ? roundTargetSeconds(timedTask, roundIdx) * 1000 : 0);
+  }
 
   const elapsedRef = useRef(elapsedMs);
   const restRef = useRef(restMs);
