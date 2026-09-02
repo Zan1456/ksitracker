@@ -12,7 +12,7 @@ import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { reorderLevelAction, reorderWorkoutAction, deleteWorkoutAction } from "./actions";
 
 export default async function AdminPlansPage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   const [allLevels, allWorkouts, allTasks] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.order)),

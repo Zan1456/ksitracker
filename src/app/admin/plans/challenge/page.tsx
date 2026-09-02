@@ -9,7 +9,7 @@ import { ChallengeTaskManager } from "@/components/admin/challenge-task-manager"
 import { ChallengeSettingsForm } from "@/components/admin/challenge-settings-form";
 
 export default async function AdminChallengePage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   const [tasks, settings, liftableTasks] = await Promise.all([
     getChallengeTasks(),

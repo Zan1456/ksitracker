@@ -1,18 +1,23 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import authConfig from "@/auth.config";
+import { ADMIN_USER_VIEW_COOKIE } from "@/lib/admin-user-view-cookie";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/login", "/register"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password"];
+const PUBLIC_PREFIXES = ["/reset-password/"];
 
 export const proxy = auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const isAdmin = req.auth?.user?.role === "admin";
   const path = nextUrl.pathname;
+  // Set when an admin taps "Megnyitás tagként" to preview the member app —
+  // suspends the usual admin↔member routing redirects below until they exit.
+  const inUserView = req.cookies.get(ADMIN_USER_VIEW_COOKIE)?.value === "1";
 
-  const isPublic = PUBLIC_PATHS.some((p) => path === p);
+  const isPublic = PUBLIC_PATHS.some((p) => path === p) || PUBLIC_PREFIXES.some((p) => path.startsWith(p));
   const isAdminRoute = path.startsWith("/admin");
 
   if (isPublic) {
@@ -32,7 +37,7 @@ export const proxy = auth((req) => {
     return NextResponse.redirect(new URL("/", nextUrl));
   }
 
-  if (!isAdminRoute && isAdmin && path === "/") {
+  if (!isAdminRoute && isAdmin && path === "/" && !inUserView) {
     return NextResponse.redirect(new URL("/admin", nextUrl));
   }
 

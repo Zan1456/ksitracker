@@ -14,7 +14,7 @@ import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list"
 import { reorderWorkoutAction, deleteWorkoutAction, deleteLevelAction } from "@/app/admin/plans/actions";
 
 export default async function EditLevelPage({ params }: { params: Promise<{ levelId: string }> }) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const { levelId } = await params;
 
   const [level] = await db.select().from(levels).where(eq(levels.id, levelId)).limit(1);

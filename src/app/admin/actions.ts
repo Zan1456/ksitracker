@@ -11,14 +11,14 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { todayIso } from "@/lib/format";
 
 export async function toggleBanAction(userId: string, ban: boolean) {
-  await requireAdmin();
+  await requireAdmin("users");
   await db.update(users).set({ isBanned: ban }).where(eq(users.id, userId));
-  revalidatePath("/admin");
+  revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
 }
 
 export async function resetDailyLimitAction(userId: string) {
-  await requireAdmin();
+  await requireAdmin("users");
   await db.update(users).set({ dailyBonusDate: todayIso() }).where(eq(users.id, userId));
   revalidatePath(`/admin/users/${userId}`);
 }
@@ -33,7 +33,7 @@ const createUserSchema = z.object({
 export type AdminFormState = { error?: string; success?: boolean } | undefined;
 
 export async function createUserAction(_prev: AdminFormState, formData: FormData): Promise<AdminFormState> {
-  await requireAdmin();
+  await requireAdmin("users");
 
   const parsed = createUserSchema.safeParse({
     name: formData.get("name"),
@@ -50,7 +50,7 @@ export async function createUserAction(_prev: AdminFormState, formData: FormData
   const passwordHash = await bcrypt.hash(password, 10);
   const [created] = await db.insert(users).values({ name, email, passwordHash, role }).returning();
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/users");
   redirect(`/admin/users/${created.id}`);
 }
 
@@ -62,7 +62,7 @@ const updateUserSchema = z.object({
 });
 
 export async function updateUserAction(_prev: AdminFormState, formData: FormData): Promise<AdminFormState> {
-  await requireAdmin();
+  await requireAdmin("users");
 
   const parsed = updateUserSchema.safeParse({
     userId: formData.get("userId"),
@@ -81,7 +81,7 @@ export async function updateUserAction(_prev: AdminFormState, formData: FormData
   if (emailTaken) return { error: "Ezzel az e-mail címmel már regisztráltak." };
 
   await db.update(users).set({ name, email, role }).where(eq(users.id, userId));
-  revalidatePath("/admin");
+  revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
   return { success: true };
 }
@@ -92,7 +92,7 @@ const resetPasswordSchema = z.object({
 });
 
 export async function resetPasswordAction(_prev: AdminFormState, formData: FormData): Promise<AdminFormState> {
-  await requireAdmin();
+  await requireAdmin("users");
   const parsed = resetPasswordSchema.safeParse({
     userId: formData.get("userId"),
     password: formData.get("password"),
@@ -105,15 +105,15 @@ export async function resetPasswordAction(_prev: AdminFormState, formData: FormD
 }
 
 export async function deleteUserAction(userId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin("users");
   if (admin.id === userId) return; // can't delete yourself
   await db.delete(users).where(eq(users.id, userId));
-  revalidatePath("/admin");
-  redirect("/admin");
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
 }
 
 export async function deleteSessionAction(userId: string, sessionId: string) {
-  await requireAdmin();
+  await requireAdmin("users");
   await db.delete(workoutSessions).where(eq(workoutSessions.id, sessionId));
   revalidatePath(`/admin/users/${userId}`);
 }

@@ -4,13 +4,24 @@ import { db } from "@/db";
 import { challengeSessions, challengeTaskResults, levels } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { getChallengeTasks } from "@/lib/challenge-data";
-import { ChallengeFocusSession } from "@/components/challenge-focus-session";
+import { getUserSettings } from "@/lib/user-settings";
+import { LiveSession } from "@/components/live-session";
+import {
+  completeChallengeTaskAction,
+  completeChallengeSessionAction,
+  abandonChallengeSessionAction,
+} from "@/app/challenge/actions";
+
+function footerValue(t: { targetDistanceMeters: number | null; resultKind: "time" | "reps" }): string {
+  if (t.targetDistanceMeters) return `${t.targetDistanceMeters} m`;
+  return t.resultKind === "reps" ? "60 mp" : "stopper";
+}
 
 export default async function ChallengeLivePage({ params }: { params: Promise<{ levelId: string }> }) {
   const { levelId } = await params;
   const user = await requireUser();
 
-  const [[session], [level], allTasks] = await Promise.all([
+  const [[session], [level], allTasks, settings] = await Promise.all([
     db
       .select()
       .from(challengeSessions)
@@ -24,6 +35,7 @@ export default async function ChallengeLivePage({ params }: { params: Promise<{ 
       .limit(1),
     db.select().from(levels).where(eq(levels.id, levelId)).limit(1),
     getChallengeTasks(),
+    getUserSettings(user.id),
   ]);
 
   if (!session) redirect(`/challenge/${levelId}`);
@@ -32,29 +44,39 @@ export default async function ChallengeLivePage({ params }: { params: Promise<{ 
   // Legacy sessions started before task selection existed have no
   // `selectedTaskIds` — treat that as "every task", matching old behavior.
   const selectedIds = session.selectedTaskIds ? new Set(session.selectedTaskIds) : null;
-  const tasks = selectedIds ? allTasks.filter((t) => selectedIds.has(t.id)) : allTasks;
-  if (tasks.length === 0) redirect("/");
+  const selectedTasks = selectedIds ? allTasks.filter((t) => selectedIds.has(t.id)) : allTasks;
+  if (selectedTasks.length === 0) redirect("/");
 
-  const results = await db
-    .select()
-    .from(challengeTaskResults)
-    .where(eq(challengeTaskResults.sessionId, session.id));
-  const visitedTaskIds = results.map((r) => r.taskId);
-  const initialCompletedTaskIds = results.filter((r) => r.completed).map((r) => r.taskId);
+  const results = await db.select().from(challengeTaskResults).where(eq(challengeTaskResults.sessionId, session.id));
+  const completedTaskIds = results.filter((r) => r.completed).map((r) => r.taskId);
+
+  const tasks = selectedTasks.map((t) => ({ id: t.id, name: t.name, meta: footerValue(t) }));
+
+  async function completeTask(taskId: string, resultMs: number) {
+    "use server";
+    await completeChallengeTaskAction({ sessionId: session!.id, taskId, resultMs });
+  }
+  async function finish() {
+    "use server";
+    await completeChallengeSessionAction(session!.id);
+  }
+  async function abandon() {
+    "use server";
+    await abandonChallengeSessionAction(session!.id);
+  }
 
   return (
-    <ChallengeFocusSession
-      sessionId={session.id}
-      levelIndex={level.index}
-      tasks={tasks.map((t) => ({
-        id: t.id,
-        name: t.name,
-        note: t.note,
-        targetDistanceMeters: t.targetDistanceMeters,
-        resultKind: t.resultKind,
-      }))}
-      visitedTaskIds={visitedTaskIds}
-      initialCompletedTaskIds={initialCompletedTaskIds}
+    <LiveSession
+      title={`${level.name} szintzáró`}
+      kicker="KIHÍVÁS"
+      tasks={tasks}
+      initialCompletedTaskIds={completedTaskIds}
+      startedAt={session.startedAt.toISOString()}
+      autoRestEnabled={settings.autoRestEnabled}
+      soundEnabled={settings.soundEnabled}
+      onCompleteTask={completeTask}
+      onFinish={finish}
+      onAbandon={abandon}
     />
   );
 }

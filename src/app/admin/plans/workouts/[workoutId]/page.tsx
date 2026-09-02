@@ -15,7 +15,7 @@ export default async function EditWorkoutPage({
 }: {
   params: Promise<{ workoutId: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const { workoutId } = await params;
 
   const [workout] = await db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);

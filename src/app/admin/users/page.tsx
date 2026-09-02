@@ -8,7 +8,7 @@ import { AdminUserList } from "@/components/admin-user-list";
 import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function AdminUsersPage() {
-  await requireAdmin();
+  await requireAdmin("users");
   const rows = await getAdminUserList();
   const withInactive = rows.map((r) => ({ ...r, inactive: isInactive(r) }));
   const activeCount = withInactive.filter((r) => !r.inactive).length;

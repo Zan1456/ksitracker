@@ -6,13 +6,13 @@ import { NewUserForm } from "@/components/admin/new-user-form";
 import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function NewUserPage() {
-  await requireAdmin();
+  await requireAdmin("users");
 
   return (
     <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
-          href="/admin"
+          href="/admin/users"
           className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-border text-text-secondary"
         >
           <IconArrowLeft width={15} height={15} />

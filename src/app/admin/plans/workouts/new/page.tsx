@@ -14,7 +14,7 @@ export default async function NewWorkoutPage({
 }: {
   searchParams: Promise<{ levelId?: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const { levelId } = await searchParams;
   if (!levelId) notFound();
 

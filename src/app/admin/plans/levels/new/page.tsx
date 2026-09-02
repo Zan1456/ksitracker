@@ -6,7 +6,7 @@ import { LevelForm } from "@/components/admin/level-form";
 import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function NewLevelPage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   return (
     <AppShell>

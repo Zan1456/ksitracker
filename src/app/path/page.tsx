@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth-helpers";
-import { getLevelsWithProgress, getCurrentLevelIndex, getDailyLimitInfo } from "@/lib/workout-data";
+import { getLevelsWithProgress, getCurrentLevelIndex } from "@/lib/workout-data";
 import { getChallengeTasks, getOrCreateChallengeSettings, getChallengeDailyLimitInfo } from "@/lib/challenge-data";
 import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
@@ -10,9 +10,8 @@ import { PathScreen } from "@/components/path-screen";
 export default async function PathPage() {
   const user = await requireUser();
 
-  const [levels, dailyLimit, challengeLimit, challengeTasks, challengeSettings] = await Promise.all([
+  const [levels, challengeLimit, challengeTasks, challengeSettings] = await Promise.all([
     getLevelsWithProgress(user.id),
-    getDailyLimitInfo(user.id),
     getChallengeDailyLimitInfo(user.id),
     getChallengeTasks(),
     getOrCreateChallengeSettings(),
@@ -41,7 +40,6 @@ export default async function PathPage() {
       <PathScreen
         levels={levels}
         currentLevelIndex={currentLevelIndex}
-        dailyLimitAllowed={dailyLimit.canStartNew}
         challengeLimitAllowed={challengeLimit.canStartNew}
         minRequired={challengeSettings.minRequired}
         poolCount={challengeTasks.length}
