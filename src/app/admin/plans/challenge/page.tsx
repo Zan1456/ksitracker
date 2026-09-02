@@ -9,7 +9,7 @@ import { ChallengeTaskManager } from "@/components/admin/challenge-task-manager"
 import { ChallengeSettingsForm } from "@/components/admin/challenge-settings-form";
 
 export default async function AdminChallengePage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   const [tasks, settings, liftableTasks] = await Promise.all([
     getChallengeTasks(),
@@ -18,7 +18,7 @@ export default async function AdminChallengePage() {
   ]);
 
   return (
-    <AppShell nav="admin">
+    <AppShell>
       {/* Reached from Edzéstervek, not a sidebar/bottom-nav destination of its
           own — same back-arrow drill-down header as the level/workout forms. */}
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">

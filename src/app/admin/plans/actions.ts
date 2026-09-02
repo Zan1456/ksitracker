@@ -20,7 +20,7 @@ const levelSchema = z.object({
 });
 
 export async function createLevelAction(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const parsed = levelSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
@@ -40,7 +40,7 @@ export async function createLevelAction(_prev: PlanFormState, formData: FormData
 }
 
 export async function updateLevelAction(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const levelId = formData.get("levelId") as string;
   const parsed = levelSchema.safeParse({
     name: formData.get("name"),
@@ -71,7 +71,7 @@ async function renumberLevels() {
 }
 
 export async function deleteLevelAction(levelId: string) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   await db.delete(levels).where(eq(levels.id, levelId));
   await renumberLevels();
   revalidatePath("/admin/plans");
@@ -79,7 +79,7 @@ export async function deleteLevelAction(levelId: string) {
 }
 
 export async function reorderLevelAction(levelId: string, direction: "up" | "down") {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const [current] = await db.select().from(levels).where(eq(levels.id, levelId)).limit(1);
   if (!current) return;
 
@@ -122,7 +122,7 @@ export async function createWorkoutAction(
   _prev: PlanFormState,
   formData: FormData
 ): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const parsed = workoutSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
@@ -144,7 +144,7 @@ export async function createWorkoutAction(
 }
 
 export async function updateWorkoutAction(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const workoutId = formData.get("workoutId") as string;
   const parsed = workoutSchema.safeParse({
     name: formData.get("name"),
@@ -162,14 +162,14 @@ export async function updateWorkoutAction(_prev: PlanFormState, formData: FormDa
 }
 
 export async function deleteWorkoutAction(levelId: string, workoutId: string) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   await db.delete(workouts).where(eq(workouts.id, workoutId));
   revalidatePath("/admin/plans");
   redirect(`/admin/plans/levels/${levelId}`);
 }
 
 export async function reorderWorkoutAction(workoutId: string, direction: "up" | "down") {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const [current] = await db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);
   if (!current) return;
 
@@ -279,7 +279,7 @@ export async function createTaskAction(
   _prev: PlanFormState,
   formData: FormData
 ): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const parsed = taskSchema.safeParse(taskFormToValues(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Hibás adatok." };
 
@@ -296,7 +296,7 @@ export async function createTaskAction(
 }
 
 export async function updateTaskAction(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const taskId = formData.get("taskId") as string;
   const parsed = taskSchema.safeParse(taskFormToValues(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Hibás adatok." };
@@ -312,14 +312,14 @@ export async function updateTaskAction(_prev: PlanFormState, formData: FormData)
 }
 
 export async function deleteTaskAction(workoutId: string, taskId: string) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   await db.delete(workoutTasks).where(eq(workoutTasks.id, taskId));
   revalidatePath(`/admin/plans/workouts/${workoutId}`);
   revalidatePath("/admin/plans");
 }
 
 export async function reorderTaskAction(taskId: string, direction: "up" | "down") {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const [current] = await db.select().from(workoutTasks).where(eq(workoutTasks.id, taskId)).limit(1);
   if (!current) return;
 

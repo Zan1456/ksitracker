@@ -331,6 +331,7 @@ async function main() {
       email: adminEmail,
       passwordHash,
       role: "admin",
+      isDefaultAdmin: true,
     })
     .onConflictDoNothing({ target: users.email });
 

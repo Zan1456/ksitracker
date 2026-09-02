@@ -6,10 +6,10 @@ import { LevelForm } from "@/components/admin/level-form";
 import { PageTransition } from "@/components/motion/page-transition";
 
 export default async function NewLevelPage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   return (
-    <AppShell nav="admin">
+    <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
           href="/admin/plans"

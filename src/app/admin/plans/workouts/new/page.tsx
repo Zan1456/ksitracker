@@ -14,7 +14,7 @@ export default async function NewWorkoutPage({
 }: {
   searchParams: Promise<{ levelId?: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const { levelId } = await searchParams;
   if (!levelId) notFound();
 
@@ -22,7 +22,7 @@ export default async function NewWorkoutPage({
   if (!level) notFound();
 
   return (
-    <AppShell nav="admin">
+    <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
           href={`/admin/plans/levels/${level.id}`}

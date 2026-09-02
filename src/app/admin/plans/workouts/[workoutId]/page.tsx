@@ -15,7 +15,7 @@ export default async function EditWorkoutPage({
 }: {
   params: Promise<{ workoutId: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const { workoutId } = await params;
 
   const [workout] = await db.select().from(workouts).where(eq(workouts.id, workoutId)).limit(1);
@@ -31,7 +31,7 @@ export default async function EditWorkoutPage({
   ]);
 
   return (
-    <AppShell nav="admin">
+    <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
           href={`/admin/plans/levels/${workout.levelId}`}

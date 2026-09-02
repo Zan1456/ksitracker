@@ -12,7 +12,7 @@ import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { reorderLevelAction, reorderWorkoutAction, deleteWorkoutAction } from "./actions";
 
 export default async function AdminPlansPage() {
-  await requireAdmin();
+  await requireAdmin("workouts");
 
   const [allLevels, allWorkouts, allTasks] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.order)),
@@ -21,10 +21,10 @@ export default async function AdminPlansPage() {
   ]);
 
   return (
-    <AppShell nav="admin" wide>
-      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5 xl:px-7 xl:py-5">
+    <AppShell>
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
         <div>
-          <h1 className="text-[16px] font-medium tracking-[-0.02em] xl:text-[19px]">Edzéstervek</h1>
+          <h1 className="text-[16px] font-medium tracking-[-0.02em]">Edzéstervek</h1>
           <div className="mono mt-2 text-[11px] text-text-faint">
             {allLevels.length} SZINT · {allWorkouts.length} EDZÉS · {allTasks.length} FELADAT
           </div>
@@ -45,22 +45,22 @@ export default async function AdminPlansPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 px-5 pt-4 xl:gap-2.5 xl:px-7">
+      <div className="grid grid-cols-3 gap-2 px-5 pt-4">
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allWorkouts.length}</div>
+          <div className="mono text-[19px] font-medium tracking-[-0.02em]">{allWorkouts.length}</div>
           <div className="mono mt-2.25 text-[10px] text-text-faint">EDZÉS</div>
         </div>
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allLevels.length}</div>
+          <div className="mono text-[19px] font-medium tracking-[-0.02em]">{allLevels.length}</div>
           <div className="mono mt-2.25 text-[10px] text-text-faint">SZINT</div>
         </div>
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{allTasks.length}</div>
+          <div className="mono text-[19px] font-medium tracking-[-0.02em]">{allTasks.length}</div>
           <div className="mono mt-2.25 text-[10px] text-text-faint">FELADAT</div>
         </div>
       </div>
 
-      <PageTransition className="gap-5 overflow-y-auto px-5 py-4 xl:px-7">
+      <PageTransition className="gap-5 overflow-y-auto px-5 py-4">
         <StaggerContainer className="flex flex-col gap-5">
           {allLevels.map((level, li) => (
             <StaggerItem key={level.id}>

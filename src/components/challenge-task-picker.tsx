@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
-import { Button } from "@/components/ui/button";
 import { startChallengeSessionAction } from "@/app/challenge/actions";
 
 type PickerTask = {
@@ -60,53 +59,62 @@ export function ChallengeTaskPicker({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        {tasks.map((t, i) => {
-          const isChecked = selected.has(t.id);
+      <div className="mb-3 rounded-[22px] bg-accent p-4.5 text-[#0A0A0B]">
+        <div className="text-[15px] font-extrabold leading-[1.3]">Ezek az idők kerülnek a ranglistára</div>
+        <p className="m-0 mt-2 text-[12.5px] font-semibold leading-[1.45] text-black/72">
+          A kihívás teljesítése zárja a szintet és nyitja a következőt.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2.25">
+        {tasks.map((t) => {
+          const on = selected.has(t.id);
           return (
             <button
               key={t.id}
               type="button"
               onClick={() => toggle(t.id)}
               className={cn(
-                "flex items-center gap-3.25 rounded-[9px] border p-3.25 text-left",
-                isChecked ? "border-border-strong bg-bg-elevated" : "border-border bg-bg-inset opacity-60"
+                "flex items-center gap-3.25 rounded-[20px] border p-3.75 text-left",
+                on ? "border-white bg-white text-brand-blue" : "border-white/15 bg-white/8 text-white"
               )}
             >
-              <span className="mono w-3.5 shrink-0 text-[11px] text-text-faint">
-                {String(i + 1).padStart(2, "0")}
-              </span>
               <span
                 className={cn(
-                  "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] text-[11px]",
-                  isChecked ? "border-text bg-text text-bg" : "border-border-strong text-transparent"
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-[1.5px] text-[12px] font-extrabold text-[#0A0A0B]",
+                  on ? "border-accent bg-accent" : "border-white/40 bg-transparent"
                 )}
               >
-                ✓
+                {on ? "✓" : ""}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13.5px] font-medium">{t.name}</div>
-                {t.note && (
-                  <div className="mt-1 text-[11.5px] leading-[1.4] text-text-muted">{t.note}</div>
-                )}
+                <div className="truncate text-[14px] font-bold">{t.name}</div>
+                {t.note && <div className="mt-1 truncate text-[10.5px] font-semibold opacity-70">{t.note}</div>}
               </div>
-              <span className="mono shrink-0 text-[12px] font-medium text-warning">{footerValue(t)}</span>
+              <span className="mono shrink-0 text-[11px] font-semibold opacity-75">{footerValue(t)}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-auto pt-1">
-        <Button size="lg" className="w-full" disabled={!canSubmit || isPending} onClick={submit}>
-          {challengePassed ? "Challenge újra" : "Challenge indítása"}
-        </Button>
-        <p className={cn("mt-2.25 text-center text-[11.5px]", canSubmit ? "text-text-faint" : "text-warning")}>
+      <div className="mt-4 pb-1">
+        <button
+          onClick={submit}
+          disabled={!canSubmit || isPending}
+          className={cn(
+            "w-full rounded-full py-4.75 text-[16px] font-extrabold transition-colors disabled:cursor-not-allowed",
+            canSubmit ? "bg-white text-brand-blue" : "bg-white/25 text-white/70"
+          )}
+        >
+          {challengePassed ? "Challenge újra" : "Kihívás indítása"}
+        </button>
+        <p className={cn("mt-2.25 text-center text-[11.5px] font-semibold", canSubmit ? "text-white/60" : "text-warning")}>
           {canSubmit
             ? `${selected.size}/${tasks.length} feladat kiválasztva`
             : `Válassz ki legalább ${minRequired} feladatot (most: ${selected.size})`}
         </p>
         {selectionError && (
-          <p className="mt-1.5 text-center text-[11.5px] text-danger">
+          <p className="mt-1.5 text-center text-[11.5px] font-semibold text-danger">
             A kiválasztás nem volt érvényes, próbáld újra.
           </p>
         )}

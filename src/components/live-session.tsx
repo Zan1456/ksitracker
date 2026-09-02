@@ -1,0 +1,269 @@
+"use client";
+
+import { useEffect, useRef, useState, useTransition } from "react";
+import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast-store";
+import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
+import { useConfirm } from "@/components/confirm-dialog";
+import { IconX } from "@/components/icons";
+
+const REST_SECONDS = 45;
+
+export type LiveTask = { id: string; name: string; meta: string };
+
+function formatClock(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60);
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+/**
+ * The Repline live-session engine, shared by workouts and challenges: one
+ * continuous stopwatch runs for the whole session; tapping the current task
+ * (or the button below) logs it done and records its own duration (the
+ * delta since the previous lap), then a fixed rest banner counts down
+ * before the next task — skippable any time. This replaces the old
+ * per-task countdown/rounds engine; task rows only show `meta` as
+ * descriptive text now, not as an enforced target.
+ */
+export function LiveSession({
+  title,
+  kicker,
+  tasks,
+  initialCompletedTaskIds,
+  startedAt,
+  autoRestEnabled,
+  soundEnabled,
+  onCompleteTask,
+  onFinish,
+  onAbandon,
+}: {
+  title: string;
+  kicker: string;
+  tasks: LiveTask[];
+  initialCompletedTaskIds: string[];
+  /** ISO timestamp the session was created — the stopwatch's origin on resume. */
+  startedAt: string;
+  autoRestEnabled: boolean;
+  soundEnabled: boolean;
+  onCompleteTask: (taskId: string, resultMs: number) => Promise<void>;
+  onFinish: () => Promise<void>;
+  onAbandon: () => Promise<void>;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
+
+  const [doneIds, setDoneIds] = useState<Set<string>>(() => new Set(initialCompletedTaskIds));
+  const [taskIdx, setTaskIdx] = useState(initialCompletedTaskIds.length);
+  const [laps, setLaps] = useState<Record<string, number>>({});
+
+  // Lazy initializer: React calls this once, on mount, to seed state — the
+  // sanctioned place for a one-off impure read like `Date.now()` (used here
+  // to resume the stopwatch from real elapsed wall-clock time instead of
+  // restarting it at 0 on reload).
+  const [elapsedMs, setElapsedMs] = useState(() => Math.max(0, Date.now() - new Date(startedAt).getTime()));
+  const [running, setRunning] = useState(true);
+  const [resting, setResting] = useState(false);
+  const [restMs, setRestMs] = useState(0);
+  const lastLapMsRef = useRef(elapsedMs);
+
+  const elapsedRef = useRef(elapsedMs);
+  const restRef = useRef(restMs);
+  useEffect(() => {
+    elapsedRef.current = elapsedMs;
+  }, [elapsedMs]);
+  useEffect(() => {
+    restRef.current = restMs;
+  }, [restMs]);
+
+  // Single combined tick, mirroring the drift-safe pattern used by the rest
+  // of the app's timers: arithmetic goes through refs, not a functional
+  // setState updater, so nothing here can be affected by React re-invoking
+  // an impure updater (Strict Mode/dev).
+  useEffect(() => {
+    if (!running && !resting) return;
+    const interval = setInterval(() => {
+      if (resting) {
+        const prev = restRef.current;
+        const next = prev - 100;
+        const prevSec = Math.ceil(prev / 1000);
+        const nextSec = Math.ceil(Math.max(0, next) / 1000);
+        if (soundEnabled && nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+        if (next > 0) {
+          restRef.current = next;
+          setRestMs(next);
+          return;
+        }
+        restRef.current = 0;
+        setRestMs(0);
+        setResting(false);
+        if (soundEnabled) playTransitionChime();
+        return;
+      }
+      if (!running) return;
+      const next = elapsedRef.current + 100;
+      elapsedRef.current = next;
+      setElapsedMs(next);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [running, resting, soundEnabled]);
+
+  const task = tasks[taskIdx];
+  const allDone = taskIdx >= tasks.length;
+
+  function completeCurrent() {
+    if (isPending || !task) return;
+    const cumulative = elapsedRef.current;
+    const durationMs = Math.max(0, cumulative - lastLapMsRef.current);
+    lastLapMsRef.current = cumulative;
+    setDoneIds((prev) => new Set(prev).add(task.id));
+    setLaps((prev) => ({ ...prev, [task.id]: cumulative }));
+    if (soundEnabled) playTransitionChime();
+    else toast(`${task.name} kész · ${formatClock(cumulative)}`, "success");
+
+    const isLast = taskIdx + 1 >= tasks.length;
+    startTransition(async () => {
+      await onCompleteTask(task.id, durationMs);
+      if (isLast) {
+        setRunning(false);
+        await onFinish();
+      }
+    });
+
+    if (!isLast) {
+      setTaskIdx((i) => i + 1);
+      if (autoRestEnabled) {
+        setResting(true);
+        setRestMs(REST_SECONDS * 1000);
+      }
+    }
+  }
+
+  async function quit() {
+    if (!(await confirm(`Biztosan megszakítod ${kicker === "KIHÍVÁS" ? "a kihívást" : "az edzést"}? A haladásod nem lesz kész.`)))
+      return;
+    toast(`${kicker === "KIHÍVÁS" ? "Kihívás" : "Edzés"} megszakítva`, "info");
+    startTransition(onAbandon);
+  }
+
+  const doneCount = doneIds.size;
+  const progressPct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
+
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col text-white">
+      <div className="flex items-center justify-between px-5.5 pb-3 pt-4">
+        <div>
+          <div className="text-[17px] font-extrabold leading-[1.1]">{title}</div>
+          <div className="mono mt-2 text-[10.5px] tracking-[0.12em] text-white/65">
+            {kicker} · {doneCount}/{tasks.length}
+          </div>
+        </div>
+        <button
+          onClick={quit}
+          disabled={isPending}
+          aria-label="Megszakítás"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/16"
+        >
+          <IconX width={14} height={14} strokeWidth={2} />
+        </button>
+      </div>
+
+      <div className="px-5.5 pb-3.5">
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/18">
+          <div className="h-1.5 rounded-full bg-accent transition-[width]" style={{ width: `${progressPct}%` }} />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5.5">
+        <div className="overflow-hidden rounded-[24px] border border-white/15 bg-white/8">
+          {tasks.map((t, i) => {
+            const isDone = doneIds.has(t.id);
+            const isCur = i === taskIdx && !isDone;
+            const lap = laps[t.id];
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={isCur ? completeCurrent : undefined}
+                disabled={!isCur}
+                className={cn(
+                  "flex w-full items-center gap-3.25 border-b border-white/8 p-4 text-left last:border-b-0",
+                  isCur && "bg-accent/14",
+                  !isCur && "cursor-default"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-[9px] border-[1.5px] text-[12px] font-extrabold text-[#0A0A0B]",
+                    isDone ? "border-accent bg-accent" : "border-white/35 bg-transparent"
+                  )}
+                >
+                  {isDone ? "✓" : ""}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className={cn("block truncate text-[14px] font-bold", isDone ? "text-white/60" : "text-white")}>
+                    {t.name}
+                  </span>
+                  <span className="mono mt-1.75 block text-[11px] tracking-[0.06em] text-white/55">{t.meta}</span>
+                </span>
+                <span className="mono shrink-0 text-[12px] font-semibold text-white/80">
+                  {lap != null ? formatClock(lap) : isCur ? "most" : "—"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="h-3.5" aria-hidden />
+      </div>
+
+      <div className="flex flex-col gap-3.5 border-t border-white/14 bg-white/8 px-5.5 py-5">
+        {resting && (
+          <div className="flex items-center gap-3 rounded-[18px] bg-accent px-4.5 py-3.5 text-[#0A0A0B]">
+            <span className="mono text-[20px] font-extrabold">{Math.ceil(restMs / 1000)}s</span>
+            <span className="flex-1 text-[12.5px] font-bold leading-[1.3]">
+              Pihenő — következik: {task ? task.name : "befejezés"}
+            </span>
+            <button
+              onClick={() => {
+                setResting(false);
+                setRestMs(0);
+              }}
+              className="rounded-full bg-[#0A0A0B] px-3.25 py-2.25 text-[11.5px] font-bold text-white"
+            >
+              Kihagyás
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="mono mb-3 text-[10.5px] tracking-[0.14em] text-white/60">
+              STOPPER · {allDone ? "kész" : task?.name}
+            </div>
+            <div className="mono text-[50px] font-medium leading-none tracking-[-0.04em]">{formatClock(elapsedMs)}</div>
+          </div>
+          <div className="mono text-[11px] font-bold tracking-[0.1em] text-accent">{running ? "FUT" : "ÁLL"}</div>
+        </div>
+
+        <div className="flex gap-2.25">
+          <button
+            onClick={() => setRunning((r) => !r)}
+            className="flex-1 rounded-full border border-white/28 bg-white/12 py-4 text-[14px] font-bold text-white"
+          >
+            {running ? "Szünet" : "Folytatás"}
+          </button>
+          <button
+            onClick={completeCurrent}
+            disabled={isPending || allDone}
+            className="flex-1 rounded-full bg-white py-4 text-[14px] font-extrabold text-brand-blue disabled:opacity-60"
+          >
+            {allDone ? "Mentés…" : taskIdx + 1 >= tasks.length ? "Befejezés" : "Kör kész"}
+          </button>
+        </div>
+      </div>
+
+      {dialog}
+    </div>
+  );
+}

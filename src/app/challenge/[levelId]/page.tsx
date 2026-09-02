@@ -36,33 +36,32 @@ export default async function ChallengeOverviewPage({
   const canPick = !locked && !isCurrentInProgress && limit.canStartNew && tasks.length > 0;
 
   return (
-    <AppShell nav="user">
-      <div className="glass sticky top-0 z-10 flex items-center gap-3 border-b px-5 py-3.5">
+    <AppShell background="deep">
+      <div className="flex items-center gap-3.25 px-5.5 pb-3 pt-1.5">
         <Link
-          href="/"
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-border text-text-secondary"
+          href="/path"
+          aria-label="Vissza a szinttervhez"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/16"
         >
-          <IconArrowLeft width={15} height={15} />
+          <IconArrowLeft width={16} height={16} strokeWidth={2} />
         </Link>
-        <span className="text-[13.5px] font-medium text-text-secondary">
-          Szint {level.index} · {level.name}
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[20px] font-extrabold leading-[1.1] tracking-[-0.02em]">
+            {level.name} szintzáró
+          </div>
+          <div className="mono mt-2 text-[10.5px] tracking-[0.12em] text-white/65">
+            VÁLASSZ LEGALÁBB {settings.minRequired} FELADATOT
+            {canPick ? "" : ` · ${tasks.length} ELÉRHETŐ`}
+          </div>
+        </div>
       </div>
 
-      <PageTransition className="gap-4.5 overflow-y-auto px-5 pb-6 pt-5">
-        <div>
-          <h1 className="mb-2 text-[24px] font-medium leading-[1.15] tracking-[-0.03em]">Challenge</h1>
-          <p className="mb-3 text-[13px] leading-[1.55] text-text-muted">
-            {canPick
-              ? `Válaszd ki, mely feladatokat csinálod meg — legalább ${settings.minRequired}-et a ${tasks.length}-ból. Az eredmények felkerülnek a ranglistára, és a szint lezártnak számít.`
-              : `Legalább ${settings.minRequired} feladatot teljesíts a ${tasks.length}-ból — az eredmények felkerülnek a ranglistára, és a szint lezártnak számít.`}
-          </p>
-          {level.challengePassed && (
-            <span className="mono inline-block rounded-[6px] border border-success-border bg-success-bg px-2.25 py-1.5 text-[11px] text-success">
-              MÁR TELJESÍTVE · ÚJRA NEKIFUTHATSZ JOBB EREDMÉNYÉRT
-            </span>
-          )}
-        </div>
+      <PageTransition className="gap-4.5 overflow-y-auto px-5.5 pb-8">
+        {level.challengePassed && (
+          <span className="mono inline-block w-fit rounded-full border border-success-border bg-success-bg px-3 py-1.5 text-[10.5px] font-bold text-success">
+            MÁR TELJESÍTVE · ÚJRA NEKIFUTHATSZ JOBB EREDMÉNYÉRT
+          </span>
+        )}
 
         {canPick ? (
           <ChallengeTaskPicker
@@ -74,35 +73,31 @@ export default async function ChallengeOverviewPage({
           />
         ) : (
           <>
-            <StaggerContainer className="flex flex-col gap-2">
-              {tasks.map((t, i) => (
+            <StaggerContainer className="flex flex-col gap-2.25">
+              {tasks.map((t) => (
                 <StaggerItem
                   key={t.id}
-                  className="flex items-center gap-3.25 rounded-[9px] border border-border bg-bg-elevated p-3.25"
+                  className="flex items-center gap-3.25 rounded-[20px] border border-white/15 bg-white/8 p-3.75"
                 >
-                  <span className="mono w-3.5 shrink-0 text-[11px] text-text-faint">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13.5px] font-medium">{t.name}</div>
-                    {t.note && (
-                      <div className="mt-1 text-[11.5px] leading-[1.4] text-text-muted">{t.note}</div>
-                    )}
-                    <div className="mono mt-1.25 text-[11px] text-text-faint">STOPPEREZETT · RANGLISTA</div>
+                    <div className="truncate text-[14px] font-bold">{t.name}</div>
+                    {t.note && <div className="mt-1 truncate text-[10.5px] font-semibold opacity-65">{t.note}</div>}
                   </div>
-                  <span className="mono shrink-0 text-[12px] font-medium text-warning">
+                  <span className="mono shrink-0 text-[11px] font-semibold text-warning">
                     {t.targetDistanceMeters ? `${t.targetDistanceMeters} m` : t.resultKind === "reps" ? "60 mp" : "stopper"}
                   </span>
                 </StaggerItem>
               ))}
               {tasks.length === 0 && (
-                <p className="py-4 text-center text-[12.5px] text-text-muted">Még nincs challenge-feladat.</p>
+                <p className="py-4 text-center text-[12.5px] font-semibold text-white/60">
+                  Még nincs kihívás-feladat.
+                </p>
               )}
             </StaggerContainer>
 
             <div className="mt-auto pt-1">
               {locked ? (
-                <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-bg-inset py-3.5 text-[13px] font-medium text-text-faint">
+                <div className="flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/8 py-4 text-[13px] font-bold text-white/60">
                   <IconLock width={14} height={14} />
                   Előbb fejezd be a szint edzéseit
                 </div>
@@ -115,14 +110,14 @@ export default async function ChallengeOverviewPage({
               ) : (
                 <div>
                   <Button size="lg" className="w-full" disabled>
-                    {level.challengePassed ? "Challenge újra" : "Challenge indítása"}
+                    {level.challengePassed ? "Kihívás újra" : "Kihívás indítása"}
                   </Button>
-                  <p className="mt-2.25 text-center text-[11.5px] text-text-faint">
+                  <p className="mt-2.25 text-center text-[11.5px] font-semibold text-white/60">
                     {tasks.length === 0
-                      ? "Még nincs challenge-feladat."
+                      ? "Még nincs kihívás-feladat."
                       : limit.reason === "already_in_progress"
-                        ? "Egy másik challenge-próbálkozásod van folyamatban."
-                        : "Ma már próbálkoztál a challenge-dzsel. Gyere vissza holnap."}
+                        ? "Egy másik kihívás-próbálkozásod van folyamatban."
+                        : "Ma már próbálkoztál a kihívással. Gyere vissza holnap."}
                   </p>
                 </div>
               )}

@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 
 // Edge-safe subset of the auth config (no Node-only imports like bcrypt or the
 // DB client) — used by middleware to check session/role without decoding
@@ -13,7 +14,9 @@ export default {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        token.role = (user as { role?: string }).role ?? "user";
+        token.role = (user as { role?: "user" | "admin" }).role ?? "user";
+        token.adminPermissions =
+          (user as { adminPermissions?: JWT["adminPermissions"] }).adminPermissions ?? null;
       }
       return token;
     },
@@ -21,6 +24,7 @@ export default {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = (token.role as "user" | "admin") ?? "user";
+        session.user.adminPermissions = token.adminPermissions ?? null;
       }
       return session;
     },

@@ -143,6 +143,14 @@ export function IconLogout(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconShield(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.2 20 6v5.4c0 5-3.8 8.2-8 9.4-4.2-1.2-8-4.4-8-9.4V6z" />
+    </svg>
+  );
+}
+
 export function IconLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" {...props}>

@@ -32,7 +32,7 @@ export async function createChallengeTaskAction(
   _prev: PlanFormState,
   formData: FormData
 ): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const parsed = challengeTaskSchema.safeParse(challengeTaskFormToValues(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Hibás adatok." };
 
@@ -56,7 +56,7 @@ export async function updateChallengeTaskAction(
   _prev: PlanFormState,
   formData: FormData
 ): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const taskId = formData.get("taskId") as string;
   const parsed = challengeTaskSchema.safeParse(challengeTaskFormToValues(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Hibás adatok." };
@@ -77,13 +77,13 @@ export async function updateChallengeTaskAction(
 }
 
 export async function deleteChallengeTaskAction(taskId: string) {
-  await requireAdmin();
+  await requireAdmin("workouts");
   await db.delete(challengeTasks).where(eq(challengeTasks.id, taskId));
   revalidatePath("/admin/plans/challenge");
 }
 
 export async function reorderChallengeTaskAction(taskId: string, direction: "up" | "down") {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const [current] = await db.select().from(challengeTasks).where(eq(challengeTasks.id, taskId)).limit(1);
   if (!current) return;
 
@@ -118,7 +118,7 @@ export async function updateChallengeSettingsAction(
   _prev: PlanFormState,
   formData: FormData
 ): Promise<PlanFormState> {
-  await requireAdmin();
+  await requireAdmin("workouts");
   const parsed = settingsSchema.safeParse({ minRequired: formData.get("minRequired") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Hibás adatok." };
 
