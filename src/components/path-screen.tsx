@@ -48,7 +48,7 @@ export function PathScreen({
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2.25 overflow-y-auto px-5.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.25 overflow-y-auto px-5.5">
         {view.workouts.map((w, i) => {
           const isDone = !view.locked && i < view.doneCount;
           const isCur = !view.locked && i === view.doneCount;

@@ -81,7 +81,7 @@ export default async function LeaderboardPage({
           Még nincs rögzített kihívás-eredmény.
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto px-5.5 pb-8">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5.5 pb-8">
           <div className="mb-4 flex items-end gap-2.25">
             {podium.map((row, i) => {
               const pos = i + 1;
@@ -153,6 +153,7 @@ export default async function LeaderboardPage({
               Még nincs időd ebben a feladatban. Válaszd be a következő szintzáró kihívásba.
             </div>
           )}
+          <div className="h-24 shrink-0" aria-hidden />
         </div>
       )}
 

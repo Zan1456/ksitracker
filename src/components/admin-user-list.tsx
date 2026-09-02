@@ -53,7 +53,7 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
   ];
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="grid grid-cols-2 gap-2 px-5 pt-3.5">
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
           <div className="mono text-[19px] font-medium tracking-[-0.02em]">{counts.active}</div>
@@ -101,7 +101,7 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
         </div>
       </div>
 
-      <StaggerContainer className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
+      <StaggerContainer className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
         {filtered.length === 0 && (
           <p className="py-6 text-center text-[13px] text-text-muted">Nincs találat.</p>
         )}
@@ -147,6 +147,7 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
             </StaggerItem>
           );
         })}
+        <div className="h-24 shrink-0" aria-hidden />
       </StaggerContainer>
     </div>
   );
