@@ -25,7 +25,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="hu" className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-bg text-text">
+      {/* `h-full`, not `min-h-full`: AppShell and everything under it size
+          themselves with percentage heights (`h-full`) down the tree so
+          each screen's own `overflow-y-auto` region can actually bound
+          itself — that chain only resolves if every ancestor has a
+          *definite* height. `min-height` doesn't count as definite, so it
+          silently breaks the chain back into content-sized boxes, and with
+          `overflow: hidden` on html/body (see globals.css) that shows up as
+          content getting visually clipped/squished instead of scrolling. */}
+      <body className="flex h-full flex-col bg-bg text-text">
         <MotionProvider>
           {children}
           <Toaster />
