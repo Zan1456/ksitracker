@@ -7,14 +7,12 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/app-shell";
 import { registerAction } from "./actions";
 
-const WEEKDAY_LABELS = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
-
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState(registerAction, undefined);
 
   return (
     <div className="flex min-h-screen w-full">
-      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10 xl:mx-0 xl:max-w-none xl:flex-none xl:basis-1/2 xl:px-24 2xl:px-32">
+      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10">
         <div className="mb-9">
           <BrandMark />
         </div>
@@ -53,27 +51,6 @@ export default function RegisterPage() {
           <Link href="/login" className="border-b border-border-strong text-text">
             Bejelentkezés
           </Link>
-        </p>
-      </div>
-
-      {/* Gép-only marketing panel — telefonon/tableten a fenti kártya jeleníti meg ugyanezt a tartalmat. */}
-      <div className="hidden flex-1 flex-col justify-center gap-7 border-l border-border bg-bg-inset px-20 xl:flex">
-        <div className="mono text-[10.5px] tracking-[0.08em] text-text-faint">HETI RITMUS</div>
-        <div>
-          <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
-            3<span className="ml-3 text-[18px] text-text-faint">SZINT, EGYRE NEHEZEBB EDZÉSEKKEL</span>
-          </div>
-        </div>
-        <div className="flex max-w-[420px] gap-2">
-          {WEEKDAY_LABELS.map((label) => (
-            <div key={label} className="flex-1 text-center">
-              <div className="mono mb-2 text-[10px] text-text-faint">{label}</div>
-              <div className="h-11 rounded-lg border border-border-strong bg-bg-elevated" />
-            </div>
-          ))}
-        </div>
-        <p className="max-w-[320px] text-[13.5px] leading-[1.6] text-text-muted">
-          Napi egy edzés, három szint, mért idők. A ranglista feladatonként mutatja a legjobb köröket.
         </p>
       </div>
     </div>
