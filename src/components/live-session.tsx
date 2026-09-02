@@ -3,13 +3,24 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast-store";
+import { formatSeconds } from "@/lib/format";
 import { playCountdownBeep, playTransitionChime } from "@/lib/sound";
 import { useConfirm } from "@/components/confirm-dialog";
 import { IconX } from "@/components/icons";
 
 const REST_SECONDS = 45;
 
-export type LiveTask = { id: string; name: string; meta: string };
+export type LiveTask = {
+  id: string;
+  name: string;
+  meta: string;
+  /** Only workout tasks carry these — challenge tasks are always stopwatch-style. */
+  type?: "reps" | "time" | "stopwatch";
+  targetSeconds?: number | null;
+  rounds?: number;
+  roundsConfig?: { work: number; restSeconds: number | null }[] | null;
+  restSeconds?: number | null;
+};
 
 function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -18,14 +29,31 @@ function formatClock(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+/** How many rounds a task has — `roundsConfig` (per-round overrides) wins when set. */
+function totalRounds(t: LiveTask): number {
+  return t.roundsConfig?.length || t.rounds || 1;
+}
+
+/** The active round's target duration, in seconds. */
+function roundTargetSeconds(t: LiveTask, roundIdx: number): number {
+  return t.roundsConfig?.[roundIdx]?.work ?? t.targetSeconds ?? 0;
+}
+
+/** Rest *after* the given round, before the next one — null means none. */
+function roundRestSeconds(t: LiveTask, roundIdx: number): number | null {
+  return t.roundsConfig?.[roundIdx]?.restSeconds ?? t.restSeconds ?? null;
+}
+
 /**
  * The Repline live-session engine, shared by workouts and challenges: one
- * continuous stopwatch runs for the whole session; tapping the current task
- * (or the button below) logs it done and records its own duration (the
- * delta since the previous lap), then a fixed rest banner counts down
- * before the next task — skippable any time. This replaces the old
- * per-task countdown/rounds engine; task rows only show `meta` as
- * descriptive text now, not as an enforced target.
+ * continuous stopwatch runs for the whole session (used for lap timing and
+ * leaderboard results), while a "time" task additionally drives its own
+ * round countdown — auto-advancing through rounds and into the next task
+ * without waiting on a tap. Reps/stopwatch tasks keep the tap-to-complete
+ * flow (there's no fixed duration to count down from). Rest *between tasks*
+ * is the user's own opt-in setting (`autoRestEnabled`); rest *between
+ * rounds* of the same timed task is authored on the task itself and always
+ * applies.
  */
 export function LiveSession({
   title,
@@ -68,14 +96,43 @@ export function LiveSession({
   const [restMs, setRestMs] = useState(0);
   const lastLapMsRef = useRef(elapsedMs);
 
+  const task = tasks[taskIdx];
+  const allDone = taskIdx >= tasks.length;
+  // Narrowed (not just a boolean) so the helpers below can take it directly
+  // without TypeScript losing track of the undefined check.
+  const timedTask = task && task.type === "time" ? task : null;
+  const isTimedTask = !!timedTask;
+
+  // Which round of the current (timed) task is active, and its own countdown.
+  const [roundIdx, setRoundIdx] = useState(0);
+  const [remainingMs, setRemainingMs] = useState(() => (timedTask ? roundTargetSeconds(timedTask, 0) * 1000 : 0));
+  // What the rest banner should do once it hits zero: nothing extra (a
+  // between-*task* rest — the task index already moved on), or advance to
+  // the next round of the same task (a between-*round* rest).
+  const restEndActionRef = useRef<"none" | "next-round">("none");
+
+  useEffect(() => {
+    setRoundIdx(0);
+  }, [taskIdx]);
+
+  useEffect(() => {
+    if (!task || task.type !== "time") return;
+    setRemainingMs(roundTargetSeconds(task, roundIdx) * 1000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskIdx, roundIdx]);
+
   const elapsedRef = useRef(elapsedMs);
   const restRef = useRef(restMs);
+  const remainingRef = useRef(remainingMs);
   useEffect(() => {
     elapsedRef.current = elapsedMs;
   }, [elapsedMs]);
   useEffect(() => {
     restRef.current = restMs;
   }, [restMs]);
+  useEffect(() => {
+    remainingRef.current = remainingMs;
+  }, [remainingMs]);
 
   // Single combined tick, mirroring the drift-safe pattern used by the rest
   // of the app's timers: arithmetic goes through refs, not a functional
@@ -99,18 +156,50 @@ export function LiveSession({
         setRestMs(0);
         setResting(false);
         if (soundEnabled) playTransitionChime();
+        if (restEndActionRef.current === "next-round") {
+          restEndActionRef.current = "none";
+          setRoundIdx((r) => r + 1);
+        }
         return;
       }
       if (!running) return;
-      const next = elapsedRef.current + 100;
-      elapsedRef.current = next;
-      setElapsedMs(next);
+
+      if (timedTask) {
+        const prev = remainingRef.current;
+        const next = prev - 100;
+        const prevSec = Math.ceil(prev / 1000);
+        const nextSec = Math.ceil(Math.max(0, next) / 1000);
+        if (soundEnabled && nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+        if (next > 0) {
+          remainingRef.current = next;
+          setRemainingMs(next);
+        } else {
+          remainingRef.current = 0;
+          setRemainingMs(0);
+          const rounds = totalRounds(timedTask);
+          if (roundIdx + 1 < rounds) {
+            const rest = roundRestSeconds(timedTask, roundIdx);
+            if (soundEnabled) playTransitionChime();
+            if (rest && rest > 0) {
+              restEndActionRef.current = "next-round";
+              setResting(true);
+              setRestMs(rest * 1000);
+            } else {
+              setRoundIdx((r) => r + 1);
+            }
+          } else {
+            completeCurrent();
+          }
+        }
+      }
+
+      const nextElapsed = elapsedRef.current + 100;
+      elapsedRef.current = nextElapsed;
+      setElapsedMs(nextElapsed);
     }, 100);
     return () => clearInterval(interval);
-  }, [running, resting, soundEnabled]);
-
-  const task = tasks[taskIdx];
-  const allDone = taskIdx >= tasks.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, resting, soundEnabled, isTimedTask, taskIdx, roundIdx]);
 
   function completeCurrent() {
     if (isPending || !task) return;
@@ -134,6 +223,7 @@ export function LiveSession({
     if (!isLast) {
       setTaskIdx((i) => i + 1);
       if (autoRestEnabled) {
+        restEndActionRef.current = "none";
         setResting(true);
         setRestMs(REST_SECONDS * 1000);
       }
@@ -149,6 +239,9 @@ export function LiveSession({
 
   const doneCount = doneIds.size;
   const progressPct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
+  const roundTargetMs = timedTask ? roundTargetSeconds(timedTask, roundIdx) * 1000 : 0;
+  const countdownPct = roundTargetMs > 0 ? Math.max(0, Math.min(100, (remainingMs / roundTargetMs) * 100)) : 0;
+  const rounds = timedTask ? totalRounds(timedTask) : 1;
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-[520px] flex-col text-white">
@@ -181,6 +274,7 @@ export function LiveSession({
             const isDone = doneIds.has(t.id);
             const isCur = i === taskIdx && !isDone;
             const lap = laps[t.id];
+            const showCountdown = isCur && t.type === "time";
             return (
               <button
                 key={t.id}
@@ -208,7 +302,13 @@ export function LiveSession({
                   <span className="mono mt-1.75 block text-[11px] tracking-[0.06em] text-white/55">{t.meta}</span>
                 </span>
                 <span className="mono shrink-0 text-[12px] font-semibold text-white/80">
-                  {lap != null ? formatClock(lap) : isCur ? "most" : "—"}
+                  {lap != null
+                    ? formatClock(lap)
+                    : showCountdown
+                      ? formatSeconds(Math.ceil(remainingMs / 1000))
+                      : isCur
+                        ? "most"
+                        : "—"}
                 </span>
               </button>
             );
@@ -222,12 +322,18 @@ export function LiveSession({
           <div className="flex items-center gap-3 rounded-[18px] bg-accent px-4.5 py-3.5 text-[#0A0A0B]">
             <span className="mono text-[20px] font-extrabold">{Math.ceil(restMs / 1000)}s</span>
             <span className="flex-1 text-[12.5px] font-bold leading-[1.3]">
-              Pihenő — következik: {task ? task.name : "befejezés"}
+              {restEndActionRef.current === "next-round"
+                ? `Pihenő — ${roundIdx + 2}. kör következik`
+                : `Pihenő — következik: ${task ? task.name : "befejezés"}`}
             </span>
             <button
               onClick={() => {
                 setResting(false);
                 setRestMs(0);
+                if (restEndActionRef.current === "next-round") {
+                  restEndActionRef.current = "none";
+                  setRoundIdx((r) => r + 1);
+                }
               }}
               className="rounded-full bg-[#0A0A0B] px-3.25 py-2.25 text-[11.5px] font-bold text-white"
             >
@@ -239,12 +345,24 @@ export function LiveSession({
         <div className="flex items-end justify-between">
           <div>
             <div className="mono mb-3 text-[10.5px] tracking-[0.14em] text-white/60">
-              STOPPER · {allDone ? "kész" : task?.name}
+              {isTimedTask ? "IDŐZÍTŐ" : "STOPPER"} · {allDone ? "kész" : task?.name}
+              {isTimedTask && rounds > 1 ? ` · ${roundIdx + 1}/${rounds} KÖR` : ""}
             </div>
-            <div className="mono text-[50px] font-medium leading-none tracking-[-0.04em]">{formatClock(elapsedMs)}</div>
+            <div className="mono text-[50px] font-medium leading-none tracking-[-0.04em]">
+              {isTimedTask ? formatSeconds(Math.ceil(remainingMs / 1000)) : formatClock(elapsedMs)}
+            </div>
           </div>
           <div className="mono text-[11px] font-bold tracking-[0.1em] text-accent">{running ? "FUT" : "ÁLL"}</div>
         </div>
+
+        {isTimedTask && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/18">
+            <div
+              className="h-1.5 rounded-full bg-accent transition-[width] duration-150 ease-linear"
+              style={{ width: `${countdownPct}%` }}
+            />
+          </div>
+        )}
 
         <div className="flex gap-2.25">
           <button
@@ -258,7 +376,13 @@ export function LiveSession({
             disabled={isPending || allDone}
             className="flex-1 rounded-full bg-white py-4 text-[14px] font-extrabold text-brand-blue disabled:opacity-60"
           >
-            {allDone ? "Mentés…" : taskIdx + 1 >= tasks.length ? "Befejezés" : "Kör kész"}
+            {allDone
+              ? "Mentés…"
+              : taskIdx + 1 >= tasks.length
+                ? "Befejezés"
+                : isTimedTask
+                  ? "Kihagyás"
+                  : "Kör kész"}
           </button>
         </div>
       </div>
