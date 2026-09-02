@@ -120,9 +120,8 @@ export default async function HomePage() {
             </div>
             {showNextAction &&
               (nextBlocked ? (
-                <Button size="lg" disabled className="w-full justify-between">
-                  <span>{nextIsChallenge ? "Kihívás megnyitása" : "Edzés indítása"}</span>
-                  <span className="mono text-[11px]">HOLNAP</span>
+                <Button size="lg" disabled className="w-full">
+                  {nextIsChallenge ? "Kihívás megnyitása" : "Edzés indítása"}
                 </Button>
               ) : (
                 <Link href={nextIsChallenge ? `/challenge/${next.level.id}` : `/workout/${next.workout.id}`}>

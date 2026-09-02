@@ -126,26 +126,32 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <div className="mono mb-1 text-[10.5px] tracking-[0.1em] text-white/60">ELŐZMÉNYEK</div>
-          {history.length === 0 && (
-            <p className="py-2 text-[12.5px] font-semibold text-white/60">Még nincs teljesített edzésed.</p>
-          )}
-          <StaggerContainer className="flex flex-col">
-            {history.map((h) => (
-              <StaggerItem key={h.sessionId} className="flex items-center gap-3 border-b border-white/10 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold">{h.workoutName}</div>
-                  <div className="mono mt-1 text-[10.5px] text-white/55">
-                    {relativeDateLabel(h.sessionDate, h.levelIndex)}
+        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+          <div className="mono border-b border-white/8 px-4.5 py-3.75 text-[10.5px] tracking-[0.14em] text-white/60">
+            ELŐZMÉNYEK
+          </div>
+          {history.length === 0 ? (
+            <p className="px-4.5 py-4 text-[12.5px] font-semibold text-white/60">Még nincs teljesített edzésed.</p>
+          ) : (
+            <StaggerContainer>
+              {history.map((h) => (
+                <StaggerItem
+                  key={h.sessionId}
+                  className="flex items-center gap-3 border-b border-white/8 px-4.5 py-3.5 last:border-b-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13.5px] font-semibold">{h.workoutName}</div>
+                    <div className="mono mt-1.75 text-[10.5px] text-white/55">
+                      {relativeDateLabel(h.sessionDate, h.levelIndex)}
+                    </div>
                   </div>
-                </div>
-                <span className="mono text-[12.5px] font-semibold text-white/75">
-                  {h.totalSeconds ? formatSeconds(h.totalSeconds) : "—"}
-                </span>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+                  <span className="mono text-[12.5px] font-semibold text-white/75">
+                    {h.totalSeconds ? formatSeconds(h.totalSeconds) : "—"}
+                  </span>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          )}
         </div>
 
         <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">

@@ -238,6 +238,15 @@ export function LiveSession({
     }
   }
 
+  function skipRest() {
+    setResting(false);
+    setRestMs(0);
+    if (restEndActionRef.current === "next-round") {
+      restEndActionRef.current = "none";
+      setRoundIdx((r) => r + 1);
+    }
+  }
+
   async function quit() {
     if (!(await confirm(`Biztosan megszakítod ${kicker === "KIHÍVÁS" ? "a kihívást" : "az edzést"}? A haladásod nem lesz kész.`)))
       return;
@@ -250,7 +259,16 @@ export function LiveSession({
   const roundTargetMs = timedTask ? roundTargetSeconds(timedTask, roundIdx) * 1000 : 0;
   const countdownPct = roundTargetMs > 0 ? Math.max(0, Math.min(100, (remainingMs / roundTargetMs) * 100)) : 0;
   const rounds = timedTask ? totalRounds(timedTask) : 1;
-  const isSkip = isTimedTask && !allDone && taskIdx + 1 < tasks.length;
+  const isSkip = resting || (isTimedTask && !allDone && taskIdx + 1 < tasks.length);
+  const primaryLabel = resting
+    ? "Kihagyás"
+    : allDone
+      ? "Mentés…"
+      : taskIdx + 1 >= tasks.length
+        ? "Befejezés"
+        : isSkip
+          ? "Kihagyás"
+          : "Kész";
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-[520px] flex-col text-white">
@@ -326,67 +344,61 @@ export function LiveSession({
         <div className="h-3.5" aria-hidden />
       </div>
 
-      <div className="relative flex flex-col gap-3.5 border-t border-white/14 bg-white/8 px-5.5 py-5">
-        <AnimatePresence>
-          {resting && (
-            <motion.div
-              key="resting-banner"
-              initial={{ opacity: 0, y: 44 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 44 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center gap-3 rounded-[18px] bg-accent px-4.5 py-3.5 text-[#0A0A0B]"
-            >
-              <span className="mono text-[20px] font-extrabold">{Math.ceil(restMs / 1000)}s</span>
-              <span className="flex-1 text-[12.5px] font-bold leading-[1.3]">
-                {restEndActionRef.current === "next-round"
-                  ? `Pihenő — ${roundIdx + 2}. kör következik`
-                  : `Pihenő — következik: ${task ? task.name : "befejezés"}`}
+      <div className="flex flex-col gap-3.5 border-t border-white/14 bg-white/8 px-5.5 py-5">
+        {/* `relative` + the absolutely-positioned overlay below cover
+            exactly this block (label, task name, big number, round badge,
+            progress bar) — while resting you shouldn't see the timer at
+            all, just the rest countdown, but the panel shouldn't jump in
+            height when it appears/disappears. */}
+        <div className="relative">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mono mb-2 text-[10px] tracking-[0.14em] text-white/45">
+                {isTimedTask ? "IDŐZÍTŐ" : "STOPPER"}
+              </div>
+              <div className="mb-3 truncate text-[20px] font-extrabold leading-[1.15] tracking-[-0.02em]">
+                {allDone ? "Kész" : task?.name}
+              </div>
+              <div className="mono text-[50px] font-medium leading-none tracking-[-0.04em]">
+                {isTimedTask ? formatSeconds(Math.ceil(remainingMs / 1000)) : formatClock(elapsedMs)}
+              </div>
+            </div>
+            {isTimedTask && rounds > 1 && (
+              <span className="mono shrink-0 rounded-full bg-accent px-3.5 py-2.25 text-[13px] font-extrabold text-accent-fg">
+                {roundIdx + 1}/{rounds} KÖR
               </span>
-              <button
-                onClick={() => {
-                  setResting(false);
-                  setRestMs(0);
-                  if (restEndActionRef.current === "next-round") {
-                    restEndActionRef.current = "none";
-                    setRoundIdx((r) => r + 1);
-                  }
-                }}
-                className="rounded-full bg-[#0A0A0B] px-3.25 py-2.25 text-[11.5px] font-bold text-white"
+            )}
+          </div>
+
+          {isTimedTask && (
+            <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-white/18">
+              <div
+                className="h-1.5 rounded-full bg-accent transition-[width] duration-150 ease-linear"
+                style={{ width: `${countdownPct}%` }}
+              />
+            </div>
+          )}
+
+          <AnimatePresence>
+            {resting && (
+              <motion.div
+                key="resting-overlay"
+                initial={{ opacity: 0, y: 44 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 44 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-[18px] bg-accent px-4.5 text-center text-[#0A0A0B]"
               >
-                Kihagyás
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <div className="mono mb-2 text-[10px] tracking-[0.14em] text-white/45">
-              {isTimedTask ? "IDŐZÍTŐ" : "STOPPER"}
-            </div>
-            <div className="mb-3 truncate text-[18px] font-extrabold leading-[1.15] tracking-[-0.015em]">
-              {allDone ? "Kész" : task?.name}
-            </div>
-            <div className="mono text-[50px] font-medium leading-none tracking-[-0.04em]">
-              {isTimedTask ? formatSeconds(Math.ceil(remainingMs / 1000)) : formatClock(elapsedMs)}
-            </div>
-          </div>
-          {isTimedTask && rounds > 1 && (
-            <span className="mono shrink-0 rounded-full bg-accent px-3.5 py-2.25 text-[13px] font-extrabold text-accent-fg">
-              {roundIdx + 1}/{rounds} KÖR
-            </span>
-          )}
+                <span className="mono text-[38px] font-extrabold leading-none">{Math.ceil(restMs / 1000)}s</span>
+                <span className="text-[12.5px] font-bold leading-[1.3]">
+                  {restEndActionRef.current === "next-round"
+                    ? `Pihenő — ${roundIdx + 2}. kör következik`
+                    : `Pihenő — következik: ${task ? task.name : "befejezés"}`}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {isTimedTask && (
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/18">
-            <div
-              className="h-1.5 rounded-full bg-accent transition-[width] duration-150 ease-linear"
-              style={{ width: `${countdownPct}%` }}
-            />
-          </div>
-        )}
 
         <div className="flex gap-2.25">
           <button
@@ -396,14 +408,14 @@ export function LiveSession({
             {running ? "Szünet" : "Folytatás"}
           </button>
           <button
-            onClick={completeCurrent}
+            onClick={resting ? skipRest : completeCurrent}
             disabled={isPending || allDone}
             className={cn(
               "flex-1 rounded-full py-4 text-[14px] font-extrabold disabled:opacity-60",
-              isSkip ? "border border-white/30 bg-[#0A0A0B] text-white" : "bg-white text-brand-blue"
+              isSkip ? "border border-white/30 bg-[#0A0A0B] text-white" : "bg-success text-[#0A0A0B]"
             )}
           >
-            {allDone ? "Mentés…" : taskIdx + 1 >= tasks.length ? "Befejezés" : isSkip ? "Kihagyás" : "Kör kész"}
+            {primaryLabel}
           </button>
         </div>
       </div>
