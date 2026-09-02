@@ -23,6 +23,12 @@ export async function resetDailyLimitAction(userId: string) {
   revalidatePath(`/admin/users/${userId}`);
 }
 
+export async function updateAdminNoteAction(userId: string, note: string) {
+  await requireAdmin("users");
+  await db.update(users).set({ adminNote: note || null }).where(eq(users.id, userId));
+  revalidatePath(`/admin/users/${userId}`);
+}
+
 const createUserSchema = z.object({
   name: z.string().trim().min(2, "A név legalább 2 karakter legyen."),
   email: z.string().trim().email("Adj meg egy érvényes e-mail címet."),

@@ -1,5 +1,5 @@
 import { ComponentType, SVGProps } from "react";
-import { IconDumbbell, IconTrophy, IconUser, IconUsers, IconClipboard, IconChart } from "@/components/icons";
+import { IconDumbbell, IconTrophy, IconUser, IconUsers, IconClipboard, IconChart, IconShield } from "@/components/icons";
 
 export type NavItem = {
   href: string;
@@ -18,8 +18,9 @@ export const navItems: Record<NavVariant, NavItem[]> = {
     { href: "/profile", label: "Profil", icon: IconUser },
   ],
   admin: [
-    { href: "/admin", label: "Felhasználók", icon: IconUsers, exact: true },
-    { href: "/admin/plans", label: "Edzéstervek", icon: IconClipboard },
-    { href: "/admin/stats", label: "Statisztika", icon: IconChart },
+    { href: "/admin", label: "Áttekintés", icon: IconChart, exact: true },
+    { href: "/admin/users", label: "Tagok", icon: IconUsers },
+    { href: "/admin/plans", label: "Edzések", icon: IconClipboard },
+    { href: "/admin/admins", label: "Adminok", icon: IconShield },
   ],
 };

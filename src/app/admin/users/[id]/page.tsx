@@ -11,6 +11,7 @@ import { IconArrowLeft } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { PageTransition } from "@/components/motion/page-transition";
 import { EditUserPanel } from "@/components/admin/edit-user-panel";
+import { AdminNoteField } from "@/components/admin/admin-note-field";
 import { SessionHistoryList } from "@/components/admin/session-history-list";
 import { toggleBanAction, resetDailyLimitAction } from "@/app/admin/actions";
 
@@ -83,6 +84,8 @@ export default async function AdminUserDetailPage({
         </div>
 
         <EditUserPanel user={user} isSelf={admin.id === user.id} />
+
+        <AdminNoteField userId={user.id} initialNote={user.adminNote} />
 
         <div className="flex flex-col gap-2">
           <div className="mono text-[10.5px] text-text-faint">SZINTENKÉNTI KÉSZÜLTSÉG</div>

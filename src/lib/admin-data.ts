@@ -157,6 +157,15 @@ export async function getAppStats() {
   const completedToday = completed.filter((s) => s.sessionDate === today).length;
   const totalSeconds = completed.reduce((sum, s) => sum + (s.totalSeconds ?? 0), 0);
 
+  // Last 14 days' completed-session counts, oldest first — for the
+  // dashboard's daily activity bar chart. Derived from the same `completed`
+  // read above rather than a separate query.
+  const dailyCounts: { iso: string; count: number }[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const iso = isoDaysAgo(i);
+    dailyCounts.push({ iso, count: completed.filter((s) => s.sessionDate === iso).length });
+  }
+
   return {
     totalUsers: allUsers.length,
     totalWorkouts: allWorkouts.length,
@@ -165,5 +174,6 @@ export async function getAppStats() {
     activeLast7,
     completedToday,
     totalHours: Math.round(totalSeconds / 3600),
+    dailyCounts,
   };
 }
