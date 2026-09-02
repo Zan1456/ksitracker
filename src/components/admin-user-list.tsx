@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { Input } from "@/components/ui/input";
 import { StaggerContainer, StaggerItem } from "@/components/motion/stagger-list";
-import { isoDaysAgo } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { AdminUserRow } from "@/lib/admin-data";
 
@@ -27,16 +26,8 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
   );
 
   const stats = useMemo(() => {
-    const last7 = isoDaysAgo(7);
-    const newThisWeek = rows.filter((r) => r.createdAt >= last7).length;
     const trainedToday = rows.filter((r) => r.daysInactive === 0).length;
-    const avgProgress =
-      rows.length > 0
-        ? Math.round(
-            (rows.reduce((s, r) => s + (r.totalCount > 0 ? r.doneCount / r.totalCount : 0), 0) / rows.length) * 100
-          )
-        : 0;
-    return { newThisWeek, trainedToday, avgProgress };
+    return { trainedToday };
   }, [rows]);
 
   const levels = useMemo(
@@ -63,31 +54,22 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="grid grid-cols-2 gap-2 px-5 pt-3.5 md:flex md:gap-2.5 xl:px-7 xl:pt-4.5">
+      <div className="grid grid-cols-2 gap-2 px-5 pt-3.5">
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{counts.active}</div>
+          <div className="mono text-[19px] font-medium tracking-[-0.02em]">{counts.active}</div>
           <div className="mono mt-2.25 text-[10px] text-text-faint">AKTÍV FIÓK</div>
         </div>
-        <div className="hidden rounded-[12px] border border-border bg-bg-inset p-4 md:block">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{stats.newThisWeek}</div>
-          <div className="mono mt-2.25 text-[10px] text-text-faint">ÚJ EZEN A HÉTEN</div>
-        </div>
-        <div className="hidden rounded-[12px] border border-border bg-bg-inset p-4 md:block">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{stats.avgProgress}%</div>
-          <div className="mono mt-2.25 text-[10px] text-text-faint">ÁTLAGOS HALADÁS</div>
-        </div>
         <div className="rounded-[12px] border border-border bg-bg-inset p-4">
-          <div className="mono text-[19px] font-medium tracking-[-0.02em] xl:text-[22px]">{stats.trainedToday}</div>
+          <div className="mono text-[19px] font-medium tracking-[-0.02em]">{stats.trainedToday}</div>
           <div className="mono mt-2.25 text-[10px] text-text-faint">MA EDZETT</div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2.5 px-5 pt-3.5 xl:flex-row xl:items-center xl:px-7 xl:py-4.5">
+      <div className="flex flex-col gap-2.5 px-5 pt-3.5">
         <Input
           placeholder="Keresés név vagy e-mail szerint"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="xl:max-w-[330px]"
         />
         <select
           value={levelFilter === "all" ? "all" : String(levelFilter)}
@@ -119,8 +101,7 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
         </div>
       </div>
 
-      {/* Mobile card list */}
-      <StaggerContainer className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4 md:hidden">
+      <StaggerContainer className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4">
         {filtered.length === 0 && (
           <p className="py-6 text-center text-[13px] text-text-muted">Nincs találat.</p>
         )}
@@ -167,114 +148,6 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
           );
         })}
       </StaggerContainer>
-
-      {/* Tablet table — same table as desktop, but fewer columns (no last-active / details columns). */}
-      <div className="hidden flex-1 flex-col overflow-hidden px-5 pb-4 md:flex xl:hidden">
-        <div className="flex flex-1 flex-col overflow-hidden rounded-[12px] border border-border bg-bg-inset">
-          <div className="mono grid grid-cols-[1.5fr_1fr_0.8fr] gap-4 border-b border-border px-5 py-3 text-[10px] tracking-[0.06em] text-text-faint">
-            <span>FELHASZNÁLÓ</span>
-            <span>HALADÁS</span>
-            <span>SZINT</span>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 && (
-              <p className="py-8 text-center text-[13px] text-text-muted">Nincs találat.</p>
-            )}
-            {filtered.map((r) => {
-              const pct = r.totalCount > 0 ? Math.round((r.doneCount / r.totalCount) * 100) : 0;
-              return (
-                <Link
-                  key={r.id}
-                  href={`/admin/users/${r.id}`}
-                  className={cn(
-                    "grid grid-cols-[1.5fr_1fr_0.8fr] items-center gap-4 border-t border-border px-5 py-3.5",
-                    r.isBanned && "opacity-60"
-                  )}
-                >
-                  <div className="flex items-center gap-2.75 overflow-hidden">
-                    <Avatar name={r.name} size={30} />
-                    <div className="overflow-hidden">
-                      <div className="truncate text-[13.5px]">{r.name}</div>
-                      <div className="mono mt-1.5 truncate text-[10px] text-text-faint">{r.email}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-1.25 flex-1 rounded-full bg-border">
-                      <div
-                        className={cn("h-1.25 rounded-full", r.inactive ? "bg-text-faint" : "bg-text-secondary")}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="mono w-9 text-[11px] text-text-muted">{pct}%</span>
-                  </div>
-                  <span className="mono text-[11px] text-text-muted">SZINT {r.currentLevelIndex}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden flex-1 flex-col overflow-hidden px-7 pb-6 xl:flex">
-        <div className="flex flex-1 flex-col overflow-hidden rounded-[12px] border border-border bg-bg-inset">
-          <div className="mono grid grid-cols-[1.6fr_1fr_0.9fr_0.8fr_90px] gap-4 border-b border-border px-5 py-3 text-[10px] tracking-[0.06em] text-text-faint">
-            <span>FELHASZNÁLÓ</span>
-            <span>HALADÁS</span>
-            <span>SZINT</span>
-            <span>UTOLSÓ EDZÉS</span>
-            <span />
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 && (
-              <p className="py-8 text-center text-[13px] text-text-muted">Nincs találat.</p>
-            )}
-            {filtered.map((r) => {
-              const pct = r.totalCount > 0 ? Math.round((r.doneCount / r.totalCount) * 100) : 0;
-              const lastActiveLabel =
-                r.daysInactive === null
-                  ? "—"
-                  : r.daysInactive === 0
-                    ? "MA"
-                    : r.daysInactive === 1
-                      ? "TEGNAP"
-                      : `${r.daysInactive} NAPJA`;
-              return (
-                <Link
-                  key={r.id}
-                  href={`/admin/users/${r.id}`}
-                  className={cn(
-                    "grid grid-cols-[1.6fr_1fr_0.9fr_0.8fr_90px] items-center gap-4 border-t border-border px-5 py-3.5",
-                    r.isBanned && "opacity-60"
-                  )}
-                >
-                  <div className="flex items-center gap-2.75 overflow-hidden">
-                    <Avatar name={r.name} size={30} />
-                    <div className="overflow-hidden">
-                      <div className="truncate text-[13.5px]">{r.name}</div>
-                      <div className="mono mt-1.5 truncate text-[10px] text-text-faint">{r.email}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-1.25 flex-1 rounded-full bg-border">
-                      <div
-                        className={cn("h-1.25 rounded-full", r.inactive ? "bg-text-faint" : "bg-text-secondary")}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="mono w-9 text-[11px] text-text-muted">{pct}%</span>
-                  </div>
-                  <span className="mono text-[11px] text-text-muted">SZINT {r.currentLevelIndex}</span>
-                  <span className="mono text-[11px] text-text-faint">{lastActiveLabel}</span>
-                  <span className="mono justify-self-end rounded-[7px] border border-border-strong px-2.75 py-1.5 text-[11.5px] font-medium text-text-secondary">
-                    Részletek
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function AdminLoading() {
   return (
-    <AppShell nav="admin">
+    <AppShell>
       <div className="border-b border-border px-5 pb-3.5 pt-3.5">
         <Skeleton className="h-6 w-40" />
       </div>

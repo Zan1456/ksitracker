@@ -14,8 +14,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Telefon + tablet: egyhasábos — a designterv szerint mindkét méretben azonos, csak "Gép" méretnél válik kétoldalassá. */}
-      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10 xl:mx-0 xl:max-w-none xl:flex-none xl:basis-1/2 xl:px-24 2xl:px-32">
+      <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-7 py-10">
         <div className="mb-9">
           <BrandMark />
         </div>
@@ -45,8 +44,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* A designterv mindhárom méretnél mutatja ezt a sávot — telefonon/tableten kártyaként a form alatt, gépen a jobb oldali panelben (lásd lent). */}
-        <div className="mt-7 flex flex-col gap-3.5 rounded-[12px] border border-border bg-bg-inset p-5 xl:hidden">
+        <div className="mt-7 flex flex-col gap-3.5 rounded-[12px] border border-border bg-bg-inset p-5">
           <div className="mono text-[10.5px] tracking-[0.08em] text-text-faint">HETI RITMUS</div>
           <div className="mono text-[38px] font-light leading-none tracking-[-0.03em]">
             3<span className="ml-2.5 text-[13px] text-text-faint">SZINT, EGYRE NEHEZEBB EDZÉSEKKEL</span>
@@ -69,27 +67,6 @@ export default function LoginPage() {
           <Link href="/register" className="border-b border-border-strong text-text">
             Regisztráció
           </Link>
-        </p>
-      </div>
-
-      {/* Gép-only marketing panel — telefonon/tableten a fenti kártya jeleníti meg ugyanezt a tartalmat. */}
-      <div className="hidden flex-1 flex-col justify-center gap-7 border-l border-border bg-bg-inset px-20 xl:flex">
-        <div className="mono text-[10.5px] tracking-[0.08em] text-text-faint">HETI RITMUS</div>
-        <div>
-          <div className="mono text-[52px] font-light leading-none tracking-[-0.03em]">
-            3<span className="ml-3 text-[18px] text-text-faint">SZINT, EGYRE NEHEZEBB EDZÉSEKKEL</span>
-          </div>
-        </div>
-        <div className="flex max-w-[420px] gap-2">
-          {WEEKDAY_LABELS.map((label) => (
-            <div key={label} className="flex-1 text-center">
-              <div className="mono mb-2 text-[10px] text-text-faint">{label}</div>
-              <div className="h-11 rounded-lg border border-success-border bg-success-bg" />
-            </div>
-          ))}
-        </div>
-        <p className="max-w-[320px] text-[13.5px] leading-[1.6] text-text-muted">
-          Napi egy edzés, három szint, mért idők. A ranglista feladatonként mutatja a legjobb köröket.
         </p>
       </div>
     </div>

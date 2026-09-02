@@ -159,62 +159,58 @@ function TaskRunner({
     }
   };
 
-  // Countdown tick — drives both the active timed round and the rest interval.
-  // Only decrements state; deliberately has no side effects of its own. It
-  // used to also fire the round/rest transition (chime, advancing
-  // round/phase) from inside this same setState updater, but an updater
-  // function must stay pure — React (in Strict Mode/dev) can and does
-  // invoke it twice to check for exactly that, which replayed the
-  // transition twice back to back and could eat a whole rest period in one
-  // go (or skip it outright). See the effect below for the transition.
+  // Countdown tick — drives both the active timed round and the rest
+  // interval. `remainingRef` mirrors `remainingMs` so the interval callback
+  // always has the true current value to do its own arithmetic on, instead
+  // of reaching for React's functional-update form. That form used to also
+  // carry the round/rest transition's side effects (chime, advancing
+  // round/phase) — but an updater function must stay pure, and React (in
+  // Strict Mode/dev) can and does invoke it twice to check for exactly
+  // that, which replayed the transition twice back to back and could eat a
+  // whole rest period in one go (or skip it outright). Doing the
+  // arithmetic via the ref and firing the transition as plain calls inside
+  // the timer callback (not synchronously in the effect body itself) avoids
+  // both that and cascading renders.
+  const remainingRef = useRef(remainingMs);
+  useEffect(() => {
+    remainingRef.current = remainingMs;
+  }, [remainingMs]);
+
   useEffect(() => {
     if (!isTimedRound && phase !== "resting") return;
     if (!running) return;
     const interval = setInterval(() => {
-      setRemainingMs((prev) => Math.max(0, prev - 100));
+      const prev = remainingRef.current;
+      const next = Math.max(0, prev - 100);
+      remainingRef.current = next;
+      setRemainingMs(next);
+
+      // Beep once as the displayed countdown ticks over to 3, 2, and 1.
+      const prevSec = Math.ceil(prev / 1000);
+      const nextSec = Math.ceil(next / 1000);
+      if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+
+      if (next > 0) return;
+      clearInterval(interval);
+      setRunning(false);
+      playTransitionChime();
+      if (phase === "resting") {
+        setRound((r) => r + 1);
+        setPhase("active");
+        setRemainingMs(durationMsFor(round + 1));
+        setRunning(isTimedRound);
+      } else {
+        advanceAfterRound();
+      }
     }, 100);
     return () => clearInterval(interval);
-  }, [running, phase, round]);
-
-  // Beep once as the displayed countdown ticks over to 3, 2, and 1.
-  const prevRemainingRef = useRef(remainingMs);
-  useEffect(() => {
-    const prev = prevRemainingRef.current;
-    prevRemainingRef.current = remainingMs;
-    if (!running || remainingMs > prev) return; // ignore resets/rewinds
-    const prevSec = Math.ceil(prev / 1000);
-    const nextSec = Math.ceil(remainingMs / 1000);
-    if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
-  }, [remainingMs, running]);
-
-  // Fires the round/rest transition exactly once when the countdown reaches
-  // zero. `firedForRef` guards against running it twice for the same
-  // phase+round (Strict Mode's double-effect-invocation in dev, or any other
-  // duplicate render) and is cleared whenever remainingMs goes back above
-  // zero (manual restart) so a genuine second countdown can still fire it.
-  const firedForRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (remainingMs > 0) {
-      firedForRef.current = null;
-      return;
-    }
-    if (!running) return;
-    if (!isTimedRound && phase !== "resting") return;
-    const key = `${phase}-${round}`;
-    if (firedForRef.current === key) return;
-    firedForRef.current = key;
-    setRunning(false);
-    playTransitionChime();
-    if (phase === "resting") {
-      setRound((r) => r + 1);
-      setPhase("active");
-      setRemainingMs(durationMsFor(round + 1));
-      setRunning(isTimedRound);
-    } else {
-      advanceAfterRound();
-    }
+    // `round` is a dependency on purpose: it forces a fresh interval (with a
+    // fresh `advanceAfterRound` closure) after every round transition, even
+    // when `running`/`phase` end up back at the same value (e.g. round N+1
+    // starts running immediately with no rest) — otherwise the old closure's
+    // stale `round` would never see the updated round count.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remainingMs, running, phase, round]);
+  }, [running, phase, round]);
 
   // Open-ended stopwatch tick (counts up).
   useEffect(() => {
@@ -504,19 +500,6 @@ export function FocusSession({
   const [round, setRound] = useState({ round: 1, rounds: 1 });
   const [showAllTasks, setShowAllTasks] = useState(false);
 
-  // Always starts counting from 0 at mount — a resumed/stale in-progress
-  // session's real `startedAt` can be far in the past, which used to make
-  // this show a wildly inflated elapsed time on load. Only shown on the
-  // desktop side panel; not worth ticking a re-render for on mobile.
-  const [elapsedTotalMs, setElapsedTotalMs] = useState(0);
-  useEffect(() => {
-    const mountedAt = Date.now();
-    const interval = setInterval(() => {
-      setElapsedTotalMs(Date.now() - mountedAt);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   useEffect(() => {
     if (index >= tasks.length) {
       startTransition(() => {
@@ -552,8 +535,7 @@ export function FocusSession({
   const nextTask = tasks[index + 1] as LiveTask | undefined;
 
   return (
-    <div className="flex min-h-screen w-full xl:justify-center">
-    <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col md:max-w-[640px] xl:mx-0">
+    <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-1 flex-col">
       <div className="flex items-center justify-between px-5 pb-2.5 pt-3.5">
         <button
           onClick={quit}
@@ -574,7 +556,7 @@ export function FocusSession({
           onClick={() => setShowAllTasks((v) => !v)}
           aria-label="Feladatlista"
           aria-expanded={showAllTasks}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-[15px] text-text-muted md:invisible md:pointer-events-none"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-border-strong text-[15px] text-text-muted"
         >
           ⋯
         </button>
@@ -599,7 +581,7 @@ export function FocusSession({
       />
 
       {nextTask ? (
-        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4 md:hidden">
+        <div className="flex items-center gap-3 border-t border-border bg-bg-inset px-5 py-4">
           <span className="mono flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-border-strong bg-bg-elevated text-[11px] text-text-faint">
             {index + 2}
           </span>
@@ -610,42 +592,17 @@ export function FocusSession({
           <span className="mono shrink-0 text-[11px] text-text-faint">{footerValue(nextTask)}</span>
         </div>
       ) : (
-        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint md:hidden">
+        <div className="border-t border-border bg-bg-inset px-5 py-4 text-center text-[12px] text-text-faint">
           Utolsó feladat
         </div>
       )}
 
       {showAllTasks && (
-        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4 md:hidden">
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-5 pb-4 pt-4">
           <div className="mono mb-0.5 text-[10.5px] text-text-faint">FELADATOK</div>
           <TaskListRows tasks={tasks} index={index} />
         </div>
       )}
-
-      {/* Tablet task list — always visible below the timer, no toggle needed. */}
-      <div className="hidden flex-1 flex-col gap-2 overflow-y-auto border-t border-border px-6 pb-5 pt-4 md:flex xl:hidden">
-        <div className="mono mb-0.5 flex items-center justify-between text-[10.5px] text-text-faint">
-          <span>FELADATOK</span>
-          <span>
-            ELTELT {formatSeconds(elapsedTotalMs / 1000)} · {tasks.length - index} FELADAT HÁTRA
-          </span>
-        </div>
-        <TaskListRows tasks={tasks} index={index} />
-      </div>
-    </div>
-
-    {/* Desktop task panel — always visible, no toggle needed at this width. */}
-    <div className="hidden w-[400px] shrink-0 flex-col border-l border-border bg-bg-inset xl:flex">
-      <div className="border-b border-border px-6 py-5">
-        <div className="text-[15px] font-medium">Feladatok</div>
-        <div className="mono mt-2 text-[11px] text-text-faint">
-          ELTELT {formatSeconds(elapsedTotalMs / 1000)} · {tasks.length - index} FELADAT HÁTRA
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
-        <TaskListRows tasks={tasks} index={index} />
-      </div>
-    </div>
     </div>
   );
 }

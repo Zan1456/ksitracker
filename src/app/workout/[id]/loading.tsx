@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function WorkoutLoading() {
   return (
-    <AppShell nav="user">
+    <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Skeleton className="h-[30px] w-[30px] rounded-lg" />
         <Skeleton className="h-4 w-32" />
