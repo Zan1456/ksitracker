@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/toaster";
 import { MotionProvider } from "@/components/motion/motion-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -17,25 +17,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Repline — Edzéskövető",
+  title: "Repline — Edzéskövető klub",
   description: "Kövesd a fejlődésed szintenkénti edzéstervekkel, időzítővel és ranglistával.",
 };
 
-// Applied before hydration to avoid a flash of the wrong theme.
-const themeInitScript = `(function(){try{var t=localStorage.getItem('repline-theme');if(t!=='light'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
-
+// Repline is dark-only — no theme toggle, no light variant to flash to.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="hu"
-      data-theme="dark"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+    <html lang="hu" className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-bg text-text">
-        <div className="bg-orbs" aria-hidden />
         <MotionProvider>
           {children}
           <Toaster />

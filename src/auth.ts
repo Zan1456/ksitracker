@@ -37,6 +37,7 @@ const providers: Provider[] = [
         name: user.name,
         email: user.email,
         role: user.role,
+        adminPermissions: user.adminPermissions,
       };
     },
   }),

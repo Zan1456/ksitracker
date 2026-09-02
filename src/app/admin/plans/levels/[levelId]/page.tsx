@@ -26,7 +26,7 @@ export default async function EditLevelPage({ params }: { params: Promise<{ leve
   ]);
 
   return (
-    <AppShell nav="admin">
+    <AppShell>
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <Link
           href="/admin/plans"

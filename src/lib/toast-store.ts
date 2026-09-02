@@ -5,7 +5,13 @@
 // down from the layout. Consumed via useSyncExternalStore in <Toaster/>.
 
 export type ToastVariant = "success" | "error" | "info";
-export type Toast = { id: number; message: string; variant: ToastVariant };
+export type Toast = {
+  id: number;
+  message: string;
+  variant: ToastVariant;
+  /** Optional undo affordance — label defaults to "Visszavonás". */
+  undo?: { label?: string; action: () => void };
+};
 
 let toasts: Toast[] = [];
 let nextId = 1;
@@ -15,9 +21,13 @@ function emit() {
   for (const l of listeners) l();
 }
 
-export function toast(message: string, variant: ToastVariant = "success") {
+export function toast(
+  message: string,
+  variant: ToastVariant = "success",
+  undo?: { label?: string; action: () => void }
+) {
   const id = nextId++;
-  toasts = [...toasts, { id, message, variant }];
+  toasts = [...toasts, { id, message, variant, undo }];
   emit();
   setTimeout(() => dismissToast(id), 3200);
 }

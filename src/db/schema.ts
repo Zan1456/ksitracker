@@ -33,6 +33,16 @@ export const difficultyEnum = pgEnum("difficulty", ["easy", "medium", "hard"]);
  */
 export type RoundConfig = { work: number; restSeconds: number | null };
 
+// Granular access for `role: "admin"` users. `null` on the user row means
+// full access (the "Fő admin" case) — this is also what every admin had
+// before this column existed, so leaving it unset is the safe default.
+export type AdminPermissions = {
+  users: boolean;
+  workouts: boolean;
+  stats: boolean;
+  admins: boolean;
+};
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -44,6 +54,26 @@ export const users = pgTable("users", {
   // beyond the normal daily limit of one, for that day only.
   dailyBonusDate: date("daily_bonus_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+
+  // --- Member-facing settings (Repline redesign) ---
+  soundEnabled: boolean("sound_enabled").notNull().default(false),
+  reminderEnabled: boolean("reminder_enabled").notNull().default(true),
+  autoRestEnabled: boolean("auto_rest_enabled").notNull().default(true),
+
+  // --- Admin-only fields ---
+  // A private note an admin can leave on a member's profile.
+  adminNote: text("admin_note"),
+  // Granular admin permissions; null = full access. Only meaningful when
+  // role = "admin".
+  adminPermissions: jsonb("admin_permissions").$type<AdminPermissions | null>(),
+  // Display-only "ALAP" badge for the seed admin account — does not affect
+  // deletion rules (an admin account can always be deleted as long as at
+  // least one other admin remains).
+  isDefaultAdmin: boolean("is_default_admin").notNull().default(false),
+
+  // --- Forgot-password flow ---
+  passwordResetToken: text("password_reset_token"),
+  passwordResetTokenExpiresAt: timestamp("password_reset_token_expires_at", { withTimezone: true }),
 });
 
 export const levels = pgTable("levels", {

@@ -36,7 +36,7 @@ export default async function ChallengeOverviewPage({
   const canPick = !locked && !isCurrentInProgress && limit.canStartNew && tasks.length > 0;
 
   return (
-    <AppShell nav="user">
+    <AppShell>
       <div className="glass sticky top-0 z-10 flex items-center gap-3 border-b px-5 py-3.5">
         <Link
           href="/"
