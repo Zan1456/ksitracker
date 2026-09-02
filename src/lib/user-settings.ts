@@ -8,7 +8,7 @@ export type UserSettings = {
   autoRestEnabled: boolean;
 };
 
-const DEFAULTS: UserSettings = { soundEnabled: false, reminderEnabled: true, autoRestEnabled: true };
+const DEFAULTS: UserSettings = { soundEnabled: true, reminderEnabled: true, autoRestEnabled: false };
 
 /** The three member-facing toggles from the profile screen. Falls back to defaults if the user row is somehow missing. */
 export async function getUserSettings(userId: string): Promise<UserSettings> {

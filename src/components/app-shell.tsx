@@ -25,8 +25,16 @@ export async function AppShell({
   const showExitPill = session?.user?.role === "admin" && (await isInUserView());
 
   return (
-    <div className="flex min-h-screen w-full justify-center" style={{ background: screenBackground(background) }}>
-      <div className="relative flex w-full max-w-[520px] flex-1 flex-col text-text">
+    <div className="flex h-full w-full justify-center" style={{ background: screenBackground(background) }}>
+      {/* `min-h-0` matters here: without it, a flex child defaults to
+          `min-height: auto` (its content size), so a page's own
+          `flex-1 overflow-y-auto` region downstream never actually gets
+          bounded by the viewport — it just grows, and the whole document
+          scrolls instead (see the `overflow: hidden` note on html/body in
+          globals.css). The `overflow-y-auto` here is a fallback for the few
+          screens (login/register/...) that render straight into AppShell
+          without their own scroll container. */}
+      <div className="relative flex h-full min-h-0 w-full max-w-[520px] flex-1 flex-col overflow-y-auto text-text">
         {showExitPill && (
           <form action={exitUserViewAction} className="absolute left-1/2 top-13 z-40 -translate-x-1/2">
             <button

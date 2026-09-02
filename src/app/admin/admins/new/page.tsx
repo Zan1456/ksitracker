@@ -22,7 +22,7 @@ export default async function NewAdminPage() {
           <div className="mono mt-2 text-[10.5px] tracking-[0.1em] text-white/60">FIÓK LÉTREHOZÁSA</div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5.5 pb-8">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5.5 pb-8">
         <AdminEditForm admin={null} canDelete={false} />
       </div>
     </AppShell>

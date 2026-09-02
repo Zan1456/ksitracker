@@ -78,6 +78,15 @@
 html,
 body {
   height: 100%;
+  /* App-shell layout: the document itself never scrolls — each screen owns
+     exactly one internal `overflow-y-auto` region instead (see AppShell).
+     Without this, a `flex-1` scroll container nested under an unbounded
+     `min-h-screen` ancestor never actually gets clipped: it just grows to
+     fit its content and the *page* scrolls instead, which on touch devices
+     can make the intended inner region feel unscrollable/stuck and lets
+     floating chrome (the bottom nav pill) drift over content that never
+     reserved space for it. */
+  overflow: hidden;
 }
 
 body {
