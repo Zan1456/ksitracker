@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { formatSeconds } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Ring } from "@/components/ring";
@@ -160,41 +160,61 @@ function TaskRunner({
   };
 
   // Countdown tick — drives both the active timed round and the rest interval.
+  // Only decrements state; deliberately has no side effects of its own. It
+  // used to also fire the round/rest transition (chime, advancing
+  // round/phase) from inside this same setState updater, but an updater
+  // function must stay pure — React (in Strict Mode/dev) can and does
+  // invoke it twice to check for exactly that, which replayed the
+  // transition twice back to back and could eat a whole rest period in one
+  // go (or skip it outright). See the effect below for the transition.
   useEffect(() => {
     if (!isTimedRound && phase !== "resting") return;
     if (!running) return;
     const interval = setInterval(() => {
-      setRemainingMs((prev) => {
-        const next = prev - 100;
-        if (next > 0) {
-          // Beep once as the displayed countdown ticks over to 3, 2, and 1.
-          const prevSec = Math.ceil(prev / 1000);
-          const nextSec = Math.ceil(next / 1000);
-          if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
-          return next;
-        }
-        clearInterval(interval);
-        setRunning(false);
-        playTransitionChime();
-        if (phase === "resting") {
-          setRound((r) => r + 1);
-          setPhase("active");
-          setRemainingMs(durationMsFor(round + 1));
-          setRunning(isTimedRound);
-        } else {
-          advanceAfterRound();
-        }
-        return 0;
-      });
+      setRemainingMs((prev) => Math.max(0, prev - 100));
     }, 100);
     return () => clearInterval(interval);
-    // `round` is a dependency on purpose: it forces a fresh interval (with a
-    // fresh `advanceAfterRound` closure) after every round transition, even
-    // when `running`/`phase` end up back at the same value (e.g. round N+1
-    // starts running immediately with no rest) — otherwise the old closure's
-    // stale `round` would never see the updated round count.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, phase, round]);
+
+  // Beep once as the displayed countdown ticks over to 3, 2, and 1.
+  const prevRemainingRef = useRef(remainingMs);
+  useEffect(() => {
+    const prev = prevRemainingRef.current;
+    prevRemainingRef.current = remainingMs;
+    if (!running || remainingMs > prev) return; // ignore resets/rewinds
+    const prevSec = Math.ceil(prev / 1000);
+    const nextSec = Math.ceil(remainingMs / 1000);
+    if (nextSec !== prevSec && nextSec >= 1 && nextSec <= 3) playCountdownBeep();
+  }, [remainingMs, running]);
+
+  // Fires the round/rest transition exactly once when the countdown reaches
+  // zero. `firedForRef` guards against running it twice for the same
+  // phase+round (Strict Mode's double-effect-invocation in dev, or any other
+  // duplicate render) and is cleared whenever remainingMs goes back above
+  // zero (manual restart) so a genuine second countdown can still fire it.
+  const firedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (remainingMs > 0) {
+      firedForRef.current = null;
+      return;
+    }
+    if (!running) return;
+    if (!isTimedRound && phase !== "resting") return;
+    const key = `${phase}-${round}`;
+    if (firedForRef.current === key) return;
+    firedForRef.current = key;
+    setRunning(false);
+    playTransitionChime();
+    if (phase === "resting") {
+      setRound((r) => r + 1);
+      setPhase("active");
+      setRemainingMs(durationMsFor(round + 1));
+      setRunning(isTimedRound);
+    } else {
+      advanceAfterRound();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingMs, running, phase, round]);
 
   // Open-ended stopwatch tick (counts up).
   useEffect(() => {
