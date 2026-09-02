@@ -65,6 +65,8 @@ export default async function AdminAdminsPage() {
         >
           Új admin hozzáadása
         </Link>
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="admin" />

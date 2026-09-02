@@ -151,7 +151,7 @@ export function LiveSession({
   const progressPct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col text-white">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[520px] flex-col text-white">
       <div className="flex items-center justify-between px-5.5 pb-3 pt-4">
         <div>
           <div className="text-[17px] font-extrabold leading-[1.1]">{title}</div>
@@ -175,7 +175,7 @@ export function LiveSession({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5.5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5.5">
         <div className="overflow-hidden rounded-[24px] border border-white/15 bg-white/8">
           {tasks.map((t, i) => {
             const isDone = doneIds.has(t.id);

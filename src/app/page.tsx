@@ -177,7 +177,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="h-16 shrink-0" aria-hidden />
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="user" />

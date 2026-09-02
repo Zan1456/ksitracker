@@ -115,6 +115,8 @@ export default async function AdminOverviewPage() {
         >
           + Új felhasználó
         </Link>
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="admin" />

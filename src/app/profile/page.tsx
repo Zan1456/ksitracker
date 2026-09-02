@@ -183,6 +183,8 @@ export default async function ProfilePage() {
             </button>
           </form>
         </div>
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="user" />

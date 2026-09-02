@@ -41,7 +41,19 @@ export default async function WorkoutLivePage({ params }: { params: Promise<{ id
     .filter((t) => t.type !== "rest")
     .map((t) => {
       const row = taskRowDisplay(t);
-      return { id: t.id, name: t.name, meta: row.subtext ? `${row.value} · ${row.subtext}` : row.value };
+      return {
+        id: t.id,
+        name: t.name,
+        meta: row.subtext ? `${row.value} · ${row.subtext}` : row.value,
+        // "time" tasks (hold/timed exercises) get a driven countdown instead
+        // of relying on the user to self-time against the meta label — see
+        // `LiveSession`'s round-timer branch.
+        type: t.type,
+        targetSeconds: t.targetSeconds,
+        rounds: t.rounds,
+        roundsConfig: t.roundsConfig,
+        restSeconds: t.restSeconds,
+      };
     });
 
   async function completeTask(taskId: string, resultMs: number) {
