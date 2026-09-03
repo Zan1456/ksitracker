@@ -53,7 +53,7 @@ export default async function ProfilePage() {
   return (
     <AppShell>
       <PageTransition className="gap-3.5 overflow-y-auto px-5.5 pb-8 pt-1.5">
-        <div className="flex items-center gap-3.5">
+        <div className="flex shrink-0 items-center gap-3.5">
           <Avatar name={user.name ?? "?"} size={54} className="!bg-white/16 !border-white/20 !text-white" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[20px] font-extrabold leading-[1.1] tracking-[-0.02em]">{user.name}</div>
@@ -61,7 +61,7 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.25">
+        <div className="grid shrink-0 grid-cols-3 gap-2.25">
           {stats.map((s) => (
             <div key={s.k} className="rounded-[20px] border border-white/16 bg-white/10 p-3.75">
               <div className="mono text-[21px] font-extrabold leading-none">{s.v}</div>
@@ -70,7 +70,7 @@ export default async function ProfilePage() {
           ))}
         </div>
 
-        <div className="rounded-[22px] border border-white/15 bg-white/8 p-4.25">
+        <div className="shrink-0 rounded-[22px] border border-white/15 bg-white/8 p-4.25">
           <div className="mb-3.5 flex items-center justify-between">
             <span className="text-[13px] font-bold">Utolsó 4 hét</span>
             <span className="mono text-[10.5px] text-white/60">28 NAP</span>
@@ -90,7 +90,7 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+        <div className="shrink-0 overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
           <div className="mono border-b border-white/8 px-4.5 py-3.75 text-[10.5px] tracking-[0.14em] text-white/60">
             SZINTEK
           </div>
@@ -110,7 +110,7 @@ export default async function ProfilePage() {
           })}
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+        <div className="shrink-0 overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
           <div className="mono border-b border-white/8 px-4.5 py-3.75 text-[10.5px] tracking-[0.14em] text-white/60">
             KIHÍVÁS-REKORDOK
           </div>
@@ -126,7 +126,7 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex shrink-0 flex-col gap-1">
           <div className="mono mb-1 text-[10.5px] tracking-[0.1em] text-white/60">ELŐZMÉNYEK</div>
           {history.length === 0 && (
             <p className="py-2 text-[12.5px] font-semibold text-white/60">Még nincs teljesített edzésed.</p>
@@ -148,7 +148,7 @@ export default async function ProfilePage() {
           </StaggerContainer>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+        <div className="shrink-0 overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
           <SettingsToggle
             settingKey="reminderEnabled"
             name="Napi emlékeztető"
@@ -169,7 +169,7 @@ export default async function ProfilePage() {
           />
         </div>
 
-        <div className="flex gap-2.25">
+        <div className="flex shrink-0 gap-2.25">
           <ExportCsvButton className="flex-1 rounded-full border border-white/25 bg-white/10 py-3.75 text-[13px] font-bold text-white" />
           <form action={signOutAction} className="flex-1">
             <button

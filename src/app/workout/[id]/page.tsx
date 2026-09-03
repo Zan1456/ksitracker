@@ -57,7 +57,7 @@ export default async function WorkoutOverviewPage({
       </div>
 
       <PageTransition className="gap-3.5 overflow-y-auto px-5.5 pb-8">
-        <div className="overflow-hidden rounded-[24px] border border-white/15 bg-white/8">
+        <div className="shrink-0 overflow-hidden rounded-[24px] border border-white/15 bg-white/8">
           <StaggerContainer>
             {data.tasks.map((t, i) => {
               const row = taskRowDisplay(t);
@@ -87,7 +87,7 @@ export default async function WorkoutOverviewPage({
           </StaggerContainer>
         </div>
 
-        <div className="rounded-[24px] border border-white/13 bg-white/6 p-4.5">
+        <div className="shrink-0 rounded-[24px] border border-white/13 bg-white/6 p-4.5">
           <div className="mono mb-2.5 text-[10.5px] tracking-[0.14em] text-white/60">MIÉRT SORBAN?</div>
           <p className="m-0 text-[12.5px] font-semibold leading-[1.5] text-white/78">
             A szint edzései egymásra épülnek, ezért csak sorrendben nyílnak meg. Az utolsó után jön a szintzáró
@@ -95,7 +95,7 @@ export default async function WorkoutOverviewPage({
           </p>
         </div>
 
-        <div className="mt-auto pt-1">
+        <div className="mt-auto shrink-0 pt-1">
           {access.locked ? (
             <div className="flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/8 py-4 text-[13px] font-bold text-white/60">
               <IconLock width={14} height={14} />
