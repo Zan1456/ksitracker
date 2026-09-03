@@ -50,7 +50,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       <PageTransition className="gap-3.5 overflow-y-auto px-5.5 pb-8">
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid shrink-0 grid-cols-2 gap-2.5">
           {kpis.map((k) => (
             <div key={k.k} className="rounded-[22px] border border-white/16 bg-white/10 p-4.25">
               <div className="mono text-[24px] font-extrabold leading-none">{k.v}</div>
@@ -59,7 +59,7 @@ export default async function AdminOverviewPage() {
           ))}
         </div>
 
-        <div className="rounded-[22px] border border-white/15 bg-white/8 p-4.5">
+        <div className="shrink-0 rounded-[22px] border border-white/15 bg-white/8 p-4.5">
           <div className="mono mb-3.5 text-[10.5px] tracking-[0.14em] text-white/60">NAPI EDZÉSEK · 14 NAP</div>
           <div className="flex h-20 items-end gap-1.25">
             {stats.dailyCounts.map((d) => (
@@ -73,7 +73,7 @@ export default async function AdminOverviewPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+        <div className="shrink-0 overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
           <div className="mono border-b border-white/8 px-4.5 py-3.75 text-[10.5px] tracking-[0.14em] text-white/60">
             SZINTEK ÁLLAPOTA
           </div>
@@ -92,7 +92,7 @@ export default async function AdminOverviewPage() {
           ))}
         </div>
 
-        <div className="rounded-[24px] bg-accent p-5 text-accent-fg">
+        <div className="shrink-0 rounded-[24px] bg-accent p-5 text-accent-fg">
           <div className="text-[21px] font-extrabold leading-[1.15] tracking-[-0.02em]">Tag nézet</div>
           <p className="m-0 mt-2.25 mb-3.75 text-[12.5px] font-semibold leading-[1.45] text-black/72">
             Nyisd meg az appot tagként: szintterv, edzések, kihívás, ranglista és profil is elérhető, majd egy
@@ -107,6 +107,8 @@ export default async function AdminOverviewPage() {
             </button>
           </form>
         </div>
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="admin" />

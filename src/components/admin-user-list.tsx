@@ -73,6 +73,7 @@ export function AdminUserList({ rows }: { rows: (AdminUserRow & { inactive: bool
             </StaggerItem>
           );
         })}
+        <div className="h-24 shrink-0" aria-hidden />
       </StaggerContainer>
     </div>
   );
