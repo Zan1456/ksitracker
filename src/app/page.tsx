@@ -9,7 +9,7 @@ import {
 } from "@/lib/workout-data";
 import { getChallengeDailyLimitInfo } from "@/lib/challenge-data";
 import { msUntilNextDay } from "@/lib/format";
-import { AppShell } from "@/components/app-shell";
+import { AppShell, BrandMark } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,12 +33,6 @@ function getNextAction(levels: LevelWithProgress[]): NextAction | null {
   return null;
 }
 
-function greetingFor(hour: number) {
-  if (hour < 10) return "Jó reggelt,";
-  if (hour < 18) return "Szép napot,";
-  return "Jó estét,";
-}
-
 export default async function HomePage() {
   const user = await requireUser();
 
@@ -50,13 +44,9 @@ export default async function HomePage() {
   ]);
 
   const next = getNextAction(levels);
-  const currentLevel = next?.level ?? levels[levels.length - 1];
   const challengesDone = levels.filter((l) => l.challengePassed).length;
 
   const name = user.name ?? "?";
-  // Hungarian name order is family-name-first ("Kovács Anna"), so the given
-  // name to greet with is the second word when there is one.
-  const firstName = name.trim().split(/\s+/)[1] ?? name;
 
   const nextIsChallenge = next?.type === "challenge";
   const nextLimit = nextIsChallenge ? challengeLimit : limit;
@@ -66,19 +56,8 @@ export default async function HomePage() {
   return (
     <AppShell>
       <PageTransition className="gap-3.5 overflow-y-auto px-5.5 pb-6 pt-1.5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[25px] font-extrabold leading-[1.15] tracking-[-0.03em]">
-              {greetingFor(new Date().getHours())}
-              <br />
-              {firstName}!
-            </div>
-            {currentLevel && (
-              <div className="mono mt-2.75 text-[11px] tracking-[0.12em] text-white/65">
-                {currentLevel.name.toUpperCase()} · {currentLevel.doneCount}/{currentLevel.totalCount} EDZÉS
-              </div>
-            )}
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <BrandMark />
           <Link href="/profile" className="shrink-0">
             <Avatar name={name} size={44} className="!bg-white/16 !border-white/20 !text-white" />
           </Link>
@@ -141,9 +120,8 @@ export default async function HomePage() {
             </div>
             {showNextAction &&
               (nextBlocked ? (
-                <Button size="lg" disabled className="w-full justify-between">
-                  <span>{nextIsChallenge ? "Kihívás megnyitása" : "Edzés indítása"}</span>
-                  <span className="mono text-[11px]">HOLNAP</span>
+                <Button size="lg" disabled className="w-full">
+                  {nextIsChallenge ? "Kihívás megnyitása" : "Edzés indítása"}
                 </Button>
               ) : (
                 <Link href={nextIsChallenge ? `/challenge/${next.level.id}` : `/workout/${next.workout.id}`}>
@@ -177,7 +155,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="h-16 shrink-0" aria-hidden />
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="user" />

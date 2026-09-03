@@ -41,6 +41,8 @@ export default async function AdminChallengePage() {
         <ChallengeSettingsForm minRequired={settings.minRequired} taskCount={tasks.length} />
 
         <ChallengeTaskManager tasks={tasks} liftableTasks={liftableTasks} />
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="admin" />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast-store";
+import { IconLock } from "@/components/icons";
 import type { LevelWithProgress } from "@/lib/workout-data";
 
 export function PathScreen({
@@ -37,23 +38,22 @@ export function PathScreen({
             key={l.id}
             onClick={() => (l.locked ? toast("Ez a szint még zárolt.", "info") : setViewIdx(i))}
             className={cn(
-              "shrink-0 rounded-full px-4 py-2.75 text-[12px] font-bold",
+              "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.75 text-[12px] font-bold",
               i === viewIdx ? "bg-white text-brand-blue" : "bg-white/14 text-white/85"
             )}
           >
             {l.name}
-            {l.locked ? " 🔒" : ""}
+            {l.locked && <IconLock width={10.5} height={10.5} strokeWidth={2.2} />}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2.25 overflow-y-auto px-5.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.25 overflow-y-auto px-5.5">
         {view.workouts.map((w, i) => {
           const isDone = !view.locked && i < view.doneCount;
           const isCur = !view.locked && i === view.doneCount;
           const locked = view.locked || i > view.doneCount;
 
-          const badge = isDone ? "✓" : locked ? "🔒" : String(i + 1);
           const state = isDone ? "KÉSZ" : isCur ? "MOST" : "ZÁROLT";
 
           const row = (
@@ -71,7 +71,7 @@ export function PathScreen({
                   isDone ? "bg-accent text-accent-fg" : isCur ? "bg-[#0A0A0B] text-white" : "bg-white/16 text-white"
                 )}
               >
-                {badge}
+                {isDone ? "✓" : locked ? <IconLock width={12} height={12} strokeWidth={2.2} /> : i + 1}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14.5px] font-extrabold">{w.name}</span>

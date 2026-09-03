@@ -31,7 +31,7 @@ export default async function EditAdminPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5.5 pb-8">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5.5 pb-8">
         <AdminEditForm
           admin={{
             id: admin.id,

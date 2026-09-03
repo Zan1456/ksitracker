@@ -56,9 +56,9 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 
   // --- Member-facing settings (Repline redesign) ---
-  soundEnabled: boolean("sound_enabled").notNull().default(false),
+  soundEnabled: boolean("sound_enabled").notNull().default(true),
   reminderEnabled: boolean("reminder_enabled").notNull().default(true),
-  autoRestEnabled: boolean("auto_rest_enabled").notNull().default(true),
+  autoRestEnabled: boolean("auto_rest_enabled").notNull().default(false),
 
   // --- Admin-only fields ---
   // A private note an admin can leave on a member's profile.

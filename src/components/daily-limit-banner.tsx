@@ -14,11 +14,11 @@ export function DailyLimitCountdownBanner({ initialMs }: { initialMs: number }) 
   }, []);
 
   return (
-    <div className="flex items-center gap-2.75 rounded-[9px] border border-warning-border bg-warning-bg px-3.25 py-3">
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
-      <div className="flex-1 text-[12.5px] leading-[1.4] text-warning">
+    <div className="flex items-center gap-3 rounded-[14px] border border-warning-border bg-warning-bg px-4 py-3.75">
+      <span className="h-2 w-2 shrink-0 rounded-full bg-warning" />
+      <div className="flex-1 text-[13.5px] font-bold leading-[1.4] text-text">
         Ma már edzettél. Új edzés{" "}
-        <span className="mono font-medium text-text">{formatHMS(ms / 1000)}</span> múlva indítható.
+        <span className="mono font-extrabold text-warning">{formatHMS(ms / 1000)}</span> múlva indítható.
       </div>
     </div>
   );

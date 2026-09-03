@@ -132,6 +132,8 @@ export default async function AdminPlansPage() {
             </p>
           )}
         </StaggerContainer>
+
+        <div className="h-24 shrink-0" aria-hidden />
       </PageTransition>
 
       <BottomNav variant="admin" />
