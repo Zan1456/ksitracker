@@ -87,28 +87,33 @@ export default async function AdminUserDetailPage({
 
         <AdminNoteField userId={user.id} initialNote={user.adminNote} />
 
-        <div className="flex flex-col gap-2">
-          <div className="mono text-[10.5px] text-text-faint">SZINTENKÉNTI KÉSZÜLTSÉG</div>
+        <div className="shrink-0 overflow-hidden rounded-[22px] border border-white/15 bg-white/8">
+          <div className="mono border-b border-white/8 px-4.5 py-3.75 text-[10.5px] tracking-[0.14em] text-white/60">
+            SZINTENKÉNTI KÉSZÜLTSÉG
+          </div>
           {levelsProgress.map((l) => {
             const lPct = l.totalCount > 0 ? l.doneCount / l.totalCount : 0;
             const lDone = l.totalCount > 0 && l.doneCount === l.totalCount;
             const lMinutes = Math.round(l.workouts.reduce((s, w) => s + (w.bestSeconds ?? 0), 0) / 60);
             return (
-              <div key={l.id} className="rounded-[10px] border border-border bg-bg-elevated p-3.25">
-                <div className="mb-2.75 flex items-center justify-between">
-                  <span className="text-[13px] font-medium">
+              <div key={l.id} className="border-b border-white/8 px-4.5 py-3.5 last:border-b-0">
+                <div className="mb-2.75 flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-bold">
                     Szint {l.index} · {l.name}
                   </span>
-                  <span className="mono text-[10.5px] text-text-faint">
+                  <span className="mono shrink-0 text-[10.5px] font-semibold text-white/70">
                     {l.locked ? "ZÁROLT · —" : `${l.doneCount}/${l.totalCount} EDZÉS · ${formatHoursMinutes(lMinutes)} Ó`}
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-border">
-                  <div
-                    className={cn("h-1.5 rounded-full", l.locked ? "bg-text-faint" : lDone ? "bg-success" : "bg-accent")}
+                <span className="block h-1.5 rounded-full bg-white/18">
+                  <span
+                    className={cn(
+                      "block h-1.5 rounded-full",
+                      l.locked ? "bg-white/30" : lDone ? "bg-success" : "bg-accent"
+                    )}
                     style={{ width: `${lPct * 100}%` }}
                   />
-                </div>
+                </span>
               </div>
             );
           })}

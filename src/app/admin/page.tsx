@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { asc } from "drizzle-orm";
 import { db } from "@/db";
 import { levels } from "@/db/schema";
@@ -108,13 +107,6 @@ export default async function AdminOverviewPage() {
             </button>
           </form>
         </div>
-
-        <Link
-          href="/admin/users/new"
-          className="rounded-full border border-white/20 bg-white/10 py-3.75 text-center text-[13px] font-bold"
-        >
-          + Új felhasználó
-        </Link>
       </PageTransition>
 
       <BottomNav variant="admin" />
