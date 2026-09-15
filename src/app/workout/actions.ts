@@ -90,10 +90,25 @@ export async function completeSessionAction(sessionId: string) {
     .limit(1);
   if (!session || session.status !== "in_progress") redirect("/");
 
-  const totalSeconds = Math.max(
+  const wallClockSeconds = Math.max(
     1,
     Math.round((Date.now() - new Date(session.startedAt).getTime()) / 1000)
   );
+
+  // Stopwatch tasks are leaderboard-eligible "challenges" embedded in the
+  // workout (see workoutTasks.type) — their own time is tracked separately
+  // via taskResults.resultMs, so it shouldn't also count toward the
+  // workout's total duration.
+  const challengeTaskResults = await db
+    .select({ resultMs: taskResults.resultMs })
+    .from(taskResults)
+    .innerJoin(workoutTasks, eq(taskResults.taskId, workoutTasks.id))
+    .where(and(eq(taskResults.sessionId, sessionId), eq(workoutTasks.type, "stopwatch")));
+  const challengeSeconds = Math.round(
+    challengeTaskResults.reduce((sum, r) => sum + (r.resultMs ?? 0), 0) / 1000
+  );
+
+  const totalSeconds = Math.max(1, wallClockSeconds - challengeSeconds);
 
   await db
     .update(workoutSessions)
